@@ -1,0 +1,23 @@
+{
+  "name": "lichtwerk",
+  "version": "1.0.0",
+  "description": "Bilder automatisch bearbeiten: 5 Vorschläge, Texteingabe für Wünsche, lernt deinen Stil",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jonas777-Hub/Claude.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jonas777-Hub/Claude/issues"
+  },
+  "homepage": "https://github.com/Jonas777-Hub/Claude#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.7.0",
+    "express": "^5.3.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LichtWerk</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f5a623'/><circle cx='16' cy='16' r='6' fill='%23111'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <span class="brand-name">LichtWerk</span>
+    </div>
+
+    <form id="prompt-form" class="prompt" autocomplete="off">
+      <svg class="prompt-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>
+      <input id="prompt-input" type="text" placeholder="Lade zuerst ein Bild hoch …" disabled
+             aria-label="Was soll am Bild geändert werden?" />
+      <button type="button" id="undo-btn" class="btn ghost" disabled title="Letzte Änderung rückgängig">↶</button>
+      <button type="submit" id="prompt-btn" class="btn primary" disabled>Anwenden</button>
+    </form>
+
+    <div class="top-actions">
+      <span id="mode-chip" class="chip">…</span>
+      <button id="new-btn" class="btn">Neues Bild</button>
+    </div>
+  </header>
+
+  <div class="subbar">
+    <span id="target-hint" class="target-hint">Schick mir ein Bild – ich mache dir 5 Vorschläge.</span>
+    <div id="quick" class="quick" hidden>
+      <button data-q="Etwas heller">Heller</button>
+      <button data-q="Schärfer">Schärfer</button>
+      <button data-q="Wärmer">Wärmer</button>
+      <button data-q="In Schwarz-Weiß">Schwarz-Weiß</button>
+      <button data-q="Etwas reinzoomen">Zoom rein</button>
+      <button data-q="Kräftigere Farben">Mehr Farbe</button>
+      <button data-q="Entferne die Person im Hintergrund">Person entfernen</button>
+    </div>
+  </div>
+
+  <section class="stats" aria-label="Dein Dashboard">
+    <div class="stat"><span class="stat-label">Bearbeitete Bilder</span><span id="stat-images" class="stat-value">0</span></div>
+    <div class="stat"><span class="stat-label">Bewertungen</span><span id="stat-ratings" class="stat-value">0</span></div>
+    <div class="stat"><span class="stat-label">Favoriten ♥</span><span id="stat-likes" class="stat-value">0</span></div>
+    <div class="stat stat-wide">
+      <div class="stat-head">
+        <span class="stat-label">Dein Stil</span>
+        <button id="reset-prefs" class="link" title="Gelernte Vorlieben löschen">zurücksetzen</button>
+      </div>
+      <div id="style-bars" class="style-bars"><span class="muted">Bewerte Vorschläge mit ♥ oder Sternen – ich lerne, was dir gefällt.</span></div>
+    </div>
+  </section>
+
+  <main class="workspace">
+    <section class="panel original-panel">
+      <div class="panel-head">
+        <h2>Original</h2>
+        <span id="original-meta" class="muted"></span>
+      </div>
+      <label id="dropzone" class="dropzone">
+        <input id="file-input" type="file" accept="image/*" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon" aria-hidden="true">＋</div>
+          <strong>Bild hierher ziehen</strong>
+          <span>oder klicken zum Auswählen · Einfügen mit Strg+V geht auch</span>
+        </div>
+      </label>
+      <div id="original-view" class="original-view" hidden></div>
+    </section>
+
+    <section class="panel suggestions-panel">
+      <div class="panel-head">
+        <h2>Vorschläge</h2>
+        <span id="suggest-meta" class="muted"></span>
+      </div>
+      <div id="grid" class="grid">
+        <div class="placeholder">Hier erscheinen deine 5 Vorschläge.</div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="viewer" class="viewer">
+    <div class="viewer-head">
+      <strong id="viewer-title"></strong>
+      <div class="viewer-actions">
+        <button id="remove-tool" class="btn" aria-pressed="false" title="Rahmen um ein Objekt ziehen, um es zu entfernen">✂ Objekt entfernen</button>
+        <button id="viewer-download" class="btn">⬇ Speichern</button>
+        <button id="viewer-close" class="btn ghost" aria-label="Schließen">✕</button>
+      </div>
+    </div>
+    <div id="viewer-stage" class="viewer-stage">
+      <div id="compare" class="compare">
+        <div id="compare-after" class="compare-layer"></div>
+        <div id="compare-before" class="compare-layer before"></div>
+        <div id="compare-handle" class="compare-handle"><span>Vorher | Nachher</span></div>
+        <div id="selection" class="selection" hidden></div>
+      </div>
+    </div>
+    <p id="viewer-hint" class="viewer-hint">Ziehe den Regler, um Vorher und Nachher zu vergleichen.</p>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
