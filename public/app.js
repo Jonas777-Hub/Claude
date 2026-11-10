@@ -40,6 +40,7 @@ const els = {
 
 const state = {
   claude: false,
+  server: false, // false = läuft ohne eigenen Server (z. B. als geteilter Link)
   file: null,
   imageId: null,
   original: null, // HTMLImageElement in voller Größe
@@ -103,7 +104,7 @@ function renderStats() {
 
 // ---------- Bild laden ----------
 
-async function handleFile(file) {
+async function handleFile(file, { sample = false } = {}) {
   if (!file || !file.type.startsWith("image/")) {
     toast("Bitte wähle eine Bilddatei aus.", { error: true });
     return;
@@ -122,12 +123,12 @@ async function handleFile(file) {
     els.dropzone.hidden = true;
     els.originalView.hidden = false;
     els.originalView.replaceChildren(state.preview);
-    els.originalMeta.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`;
+    els.originalMeta.textContent = `${sample ? "Beispielbild · " : ""}${img.naturalWidth} × ${img.naturalHeight} px`;
     els.input.disabled = false;
     els.input.placeholder = "Was soll ich ändern? z. B. „Gefällt mir, aber schneid den Mann im Hintergrund raus und mach es wärmer“";
     els.quick.hidden = false;
 
-    prefs.countImage();
+    if (!sample) prefs.countImage();
     renderStats();
     await makeSuggestions();
   } catch (error) {
@@ -144,7 +145,7 @@ async function makeSuggestions() {
   if (state.claude) {
     els.suggestMeta.textContent = "Claude schaut sich dein Bild an …";
     try {
-      const data = await postJson("/api/suggest", {
+      const data = await postJson("api/suggest", {
         image: canvasToDataUrl(state.preview),
         preferences: prefs.summary(),
       });
@@ -329,7 +330,7 @@ async function applyInstruction(text) {
     let result = null;
     if (state.claude) {
       try {
-        const data = await postJson("/api/edit", {
+        const data = await postJson("api/edit", {
           image: canvasToDataUrl(state.preview),
           params: s.params,
           removals: s.removals,
@@ -483,6 +484,7 @@ async function download(s) {
   const full = scaledCanvas(state.original, EXPORT_SIZE);
   const out = renderImage(full, s.params, s.removals);
   out.toBlob((blob) => {
+    if (!state.server) return showSaveDialog(blob, s.name);
     const a = document.createElement("a");
     const baseName = (state.file?.name || "bild").replace(/\.[^.]+$/, "");
     a.href = URL.createObjectURL(blob);
@@ -490,6 +492,40 @@ async function download(s) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }, "image/jpeg", 0.92);
+}
+
+function showSaveDialog(blob, name) {
+  const dlg = $("#save-dialog");
+  const img = dlg.querySelector("img");
+  if (img.src) URL.revokeObjectURL(img.src);
+  img.src = URL.createObjectURL(blob);
+  img.alt = name;
+  dlg.querySelector("#save-title").textContent = name;
+  if (!dlg.open) dlg.showModal();
+}
+$("#save-close").addEventListener("click", () => $("#save-dialog").close());
+
+/** Malt ein Beispielfoto, damit die App sofort zeigt, was sie kann. */
+function sampleFile() {
+  const c = document.createElement("canvas");
+  c.width = 1200; c.height = 800;
+  const g = c.getContext("2d");
+  const sky = g.createLinearGradient(0, 0, 0, 520);
+  sky.addColorStop(0, "#5a6f8c"); sky.addColorStop(1, "#c9a67d");
+  g.fillStyle = sky; g.fillRect(0, 0, 1200, 800);
+  g.fillStyle = "#e8c27a"; g.beginPath(); g.arc(880, 330, 70, 0, Math.PI * 2); g.fill();
+  g.fillStyle = "#4a5568";
+  g.beginPath(); g.moveTo(0, 520); g.lineTo(260, 300); g.lineTo(470, 470); g.lineTo(720, 260); g.lineTo(1200, 520); g.lineTo(1200, 800); g.lineTo(0, 800); g.fill();
+  const lake = g.createLinearGradient(0, 520, 0, 800);
+  lake.addColorStop(0, "#7d8aa0"); lake.addColorStop(1, "#3a4658");
+  g.fillStyle = lake; g.fillRect(0, 540, 1200, 260);
+  g.fillStyle = "#2f3d2c";
+  g.beginPath(); g.moveTo(0, 560); g.quadraticCurveTo(300, 500, 560, 580); g.lineTo(560, 800); g.lineTo(0, 800); g.fill();
+  g.fillStyle = "#1f1a18"; g.fillRect(760, 560, 22, 120);
+  g.fillStyle = "#b08a74"; g.beginPath(); g.arc(771, 548, 14, 0, Math.PI * 2); g.fill();
+  // leicht flau und dunkel, damit die Vorschläge etwas zu tun haben
+  g.globalCompositeOperation = "multiply"; g.fillStyle = "#b8b4b0"; g.fillRect(0, 0, 1200, 800);
+  return new Promise((resolve) => c.toBlob((b) => resolve(new File([b], "beispiel.jpg", { type: "image/jpeg" })), "image/jpeg", 0.9));
 }
 
 // ---------- Ereignisse ----------
@@ -509,8 +545,17 @@ els.quick.addEventListener("click", (e) => {
   const q = e.target.closest("button")?.dataset.q;
   if (q) applyInstruction(q);
 });
-$("#reset-prefs").addEventListener("click", () => {
-  if (!confirm("Alle gelernten Vorlieben löschen?")) return;
+let resetArmed = null;
+$("#reset-prefs").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  if (!resetArmed) {
+    btn.textContent = "wirklich löschen?";
+    resetArmed = setTimeout(() => { btn.textContent = "zurücksetzen"; resetArmed = null; }, 4000);
+    return;
+  }
+  clearTimeout(resetArmed);
+  resetArmed = null;
+  btn.textContent = "zurücksetzen";
   prefs.reset();
   renderStats();
   if (state.suggestions.length) renderGrid();
@@ -540,10 +585,12 @@ document.addEventListener("paste", (e) => {
 (async function init() {
   renderStats();
   try {
-    const res = await fetch("/api/status");
+    const res = await fetch("api/status");
     const data = await res.json();
+    state.server = true;
     state.claude = Boolean(data.claude);
   } catch {
+    state.server = false;
     state.claude = false;
   }
   els.modeChip.textContent = state.claude ? "● Claude aktiv" : "● Lokaler Modus";
@@ -551,4 +598,5 @@ document.addEventListener("paste", (e) => {
   els.modeChip.title = state.claude
     ? "Claude analysiert deine Bilder und versteht freie Wünsche."
     : "Ohne API-Schlüssel: Vorschläge und Wünsche werden lokal berechnet.";
+  if (!state.preview) handleFile(await sampleFile(), { sample: true });
 })();

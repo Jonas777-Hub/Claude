@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="claude:viewport-fit-sides" content="cover" />
   <title>LichtWerk</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23f5a623'/><circle cx='16' cy='16' r='6' fill='%23111'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -102,6 +103,15 @@
       </div>
     </div>
     <p id="viewer-hint" class="viewer-hint">Ziehe den Regler, um Vorher und Nachher zu vergleichen.</p>
+  </dialog>
+
+  <dialog id="save-dialog" class="viewer save-dialog">
+    <div class="viewer-head">
+      <strong id="save-title"></strong>
+      <button id="save-close" class="btn ghost" aria-label="Schließen">✕</button>
+    </div>
+    <div class="viewer-stage"><img alt="" /></div>
+    <p class="viewer-hint">Zum Speichern: Rechtsklick aufs Bild → „Bild speichern unter …“. Am Handy: Bild lange drücken → „In Fotos sichern“.</p>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
