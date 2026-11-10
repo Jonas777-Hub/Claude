@@ -13,6 +13,7 @@ export const DEFAULT_STATE = {
   log: {},
   weights: [],
   water: {},
+  sport: {},
   ratings: {},
   saved: [],
   cooked: {},
@@ -28,6 +29,7 @@ export const DEFAULT_STATE = {
   prices: {},
   settings: {
     theme: 'system',
+    sportCredit: 0.5,
     displayName: '',
     notifications: { meals: false, mealTimes: ['08:00', '12:30', '19:00'], weight: false, weightTime: '07:30', water: false, waterEvery: 120 },
   },
@@ -151,6 +153,15 @@ export function StoreProvider({ children }) {
     update(s => ({ ...s, water: { ...s.water, [date]: Math.max(0, (s.water[date] || 0) + ml) } }))
   }, [update])
 
+  // ---------- Sport ----------
+  const addWorkout = useCallback((w, date = todayKey()) => {
+    update(s => ({ ...s, sport: { ...s.sport, [date]: [...(s.sport?.[date] || []), { id: newId(), time: Date.now(), ...w }] } }))
+  }, [update])
+
+  const removeWorkout = useCallback((id, date = todayKey()) => {
+    update(s => ({ ...s, sport: { ...s.sport, [date]: (s.sport?.[date] || []).filter(w => w.id !== id) } }))
+  }, [update])
+
   // ---------- Einkaufswagen (lokal oder geteilt in Echtzeit) ----------
   const actor = state.settings.displayName || user?.name || 'Ich'
   const wsRef = useRef(null)
@@ -242,7 +253,7 @@ export function StoreProvider({ children }) {
 
   const value = {
     state, update, user, sync, online, login, logout, targets, toast, notify, setToast,
-    addEntries, removeEntry, updateEntry, addWeight, addWater,
+    addEntries, removeEntry, updateEntry, addWeight, addWater, addWorkout, removeWorkout,
     cartOp, shareCart, joinCart, leaveCart, actor,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

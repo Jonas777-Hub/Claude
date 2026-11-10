@@ -5,6 +5,7 @@ import { useUI } from '../App.jsx'
 import { useAIStatus, askCoach } from '../lib/ai.js'
 import { RECIPES } from '../data/recipes.js'
 import { FOODS } from '../data/foods.js'
+import { lastDays } from '../lib/sport.js'
 import { GOALS, fmt, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
 import { eligibleRecipes, learnPreferences, rankRecipes } from '../lib/recommend.js'
 
@@ -32,6 +33,8 @@ export default function Coach() {
       profil: { geschlecht: state.profile.sex, alter: state.profile.age, groesse_cm: state.profile.height, gewicht_kg: state.profile.weight, aktivitaet: state.profile.activity, ziel: GOALS.find(g => g.id === state.profile.goal)?.label, wunschgewicht: state.profile.targetWeight, zieltermin: state.profile.targetDate },
       tagesziele: { kcal: targets.kcal, protein_g: targets.p, kohlenhydrate_g: targets.c, fett_g: targets.f, zucker_max_g: targets.s, ballaststoffe_g: targets.fi },
       heute_gegessen: round(consumed),
+      sport_heute: (state.sport?.[todayKey()] || []).map(w => `${w.sport}: ${w.minutes} Min. (${w.intensity}), ca. ${w.kcal} kcal`),
+      sport_letzte_7_tage: lastDays(state.sport, 7).filter(d => d.count).map(d => ({ datum: d.date, minuten: d.minutes, kcal: d.kcal })),
       heute_noch_offen: round(rem),
       heutige_mahlzeiten: (state.log[todayKey()] || []).map(e => `${e.name} (${Math.round(e.kcal)} kcal)`),
       letzte_7_tage: last7,
