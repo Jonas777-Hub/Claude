@@ -2,7 +2,7 @@
 // und prüft, dass jedes Bild erreichbar ist. Aufruf: node scripts/build-meal-images.js
 import fs from 'node:fs'
 
-const src = fs.readFileSync(new URL('../src/data/recipes.js', import.meta.url), 'utf8')
+const src = ['recipes.js', 'recipes2.js'].map(f => fs.readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8')).join('\n')
 const ids = [...new Set([...src.matchAll(/R\('[^']+', '(\d+)'/g)].map(m => m[1]))]
 const out = {}
 let failed = 0

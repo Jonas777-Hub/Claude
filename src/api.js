@@ -42,7 +42,7 @@ export function resizeImage(file, max = 1024, quality = 0.82) {
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
       const dataUrl = c.toDataURL('image/jpeg', quality)
       URL.revokeObjectURL(url)
-      resolve({ dataUrl, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' })
+      c.toBlob(blob => resolve({ dataUrl, blob, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' }), 'image/jpeg', quality)
     }
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht gelesen werden.')) }
     img.src = url

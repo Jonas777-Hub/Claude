@@ -7,7 +7,7 @@ import crypto from 'node:crypto'
 import { WebSocketServer } from 'ws'
 import { db } from './db.js'
 import { hashPassword, verifyPassword, signToken, requireAuth, optionalAuth } from './auth.js'
-import { aiEnabled, analyzePhoto, coach, generateRecipe } from './ai.js'
+import { aiEnabled, analyzePhoto, coach, generateRecipe, readReceipt } from './ai.js'
 
 const app = express()
 app.disable('x-powered-by')
@@ -226,6 +226,12 @@ app.post('/api/ai/coach', optionalAuth, requireAI, rateLimit(20, 60_000), wrap(a
 
 app.post('/api/ai/generate-recipe', optionalAuth, requireAI, rateLimit(10, 60_000), wrap(async (req, res) => {
   res.json(await generateRecipe(req.body || {}))
+}))
+
+app.post('/api/ai/receipt', optionalAuth, requireAI, rateLimit(10, 60_000), wrap(async (req, res) => {
+  const { image, mediaType } = req.body || {}
+  if (!image || image.length > 7_000_000) return res.status(400).json({ error: 'Bitte ein Foto des Kassenbons senden.' })
+  res.json(await readReceipt({ imageBase64: image, mediaType }))
 }))
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ai: aiEnabled() }))

@@ -85,3 +85,31 @@ test('Ersatzprodukte bleiben in der Warengruppe', () => {
   const s = substitutes('skyrvanille', 3)
   assert.ok(s.length === 3 && s.every(x => x.cat === 'mp' || x.cat === 'fp' || true))
 })
+
+import { buildWeekPlan, swapMeal } from '../src/lib/weekplan.js'
+import { priceFromInput, mergePrice, priceKey, itemCost, chainPrice } from '../src/lib/shopping.js'
+
+test('Wochenplan: 7 Tage × 4 Mahlzeiten, ohne Abneigungen, wenig Wiederholungen', () => {
+  const targets = calcTargets(profile)
+  const plan = buildWeekPlan({ targets, goal: 'abnehmen', prefs: learnPreferences({}), ratings: {}, dislikes: ['Fisch'], start: '2026-11-10', seed: 1 })
+  assert.equal(plan.days.length, 7)
+  const ids = plan.days.flatMap(d => Object.values(d.meals))
+  assert.equal(ids.length, 28)
+  const fish = RECIPES.filter(r => recipeHasDislike(r, ['Fisch'])).map(r => r.id)
+  assert.ok(!ids.some(id => fish.includes(id)))
+  const counts = {}; ids.forEach(id => { counts[id] = (counts[id] || 0) + 1 })
+  assert.ok(Math.max(...Object.values(counts)) <= 3)
+  const swapped = swapMeal(plan, '2026-11-10', 'A', { targets, goal: 'abnehmen', prefs: learnPreferences({}), ratings: {}, dislikes: [] })
+  assert.notEqual(swapped.days[0].meals.A, plan.days[0].meals.A)
+})
+
+test('Echte Preise: Eingabe wird auf andere Mengen umgerechnet und pro Supermarkt genutzt', () => {
+  const item = { key: 'reis', name: 'Basmatireis', amount: 500, unit: 'g' }
+  let prices = mergePrice({}, priceKey(item), priceFromInput(item, 1.99, 'Lidl'))
+  assert.ok(Math.abs(itemCost({ ...item, amount: 1000 }, prices) - 3.98) < 0.001)
+  const est = itemCost({ ...item, amount: 1000 })
+  assert.notEqual(est, 3.98)
+  const lidl = chainPrice('Lidl', [{ ...item, amount: 1000 }], prices)
+  assert.equal(lidl.realCount, 1)
+  assert.ok(Math.abs(lidl.total - 3.98) < 0.001)
+})

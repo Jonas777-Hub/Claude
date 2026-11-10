@@ -14,12 +14,15 @@ async function getSample() {
 
 export function getAIStatus() {
   if (!statusPromise) {
+    // Nicht verfügbar? Beim nächsten Öffnen erneut prüfen (z. B. Freigabe erst später erteilt)
+    setTimeout(() => statusPromise?.then(s => { if (!s.enabled) statusPromise = null }), 0)
     statusPromise = (async () => {
       if (STATIC) {
         const sample = await getSample()
         if (!sample) return { enabled: false, images: false, via: null }
         const limits = await sample.limits().catch(() => null)
-        return { enabled: true, images: !!limits?.images, via: 'claude' }
+        // limits() fehlt in älteren Apps – dann trotzdem versuchen und den Fehler beim Aufruf melden
+        return { enabled: true, images: limits ? !!limits.images : true, via: 'claude' }
       }
       try {
         const s = await api('/api/ai/status', { auth: false })
@@ -49,25 +52,30 @@ const ERR = {
 const wrap = e => Object.assign(new Error(ERR[e?.code] || e?.message || 'Die KI ist gerade nicht erreichbar – bitte erneut versuchen.'), { code: e?.code })
 
 // ---------- Fotoerkennung ----------
-const PHOTO_PROMPT = `Du bist ein erfahrener Ernährungswissenschaftler. Analysiere das Foto einer Mahlzeit:
-erkenne jedes sichtbare Lebensmittel, schätze die Menge in Gramm anhand von Tellergröße, Besteck und typischen Portionen
-und berechne die Nährwerte mit Referenzwerten (z. B. Bundeslebensmittelschlüssel). Berücksichtige Zubereitungsfett und Saucen.
-Antworte NUR mit einem JSON-Objekt in genau dieser Form (alle Zahlen als Zahlen, alle Texte auf Deutsch):
-{"is_food": true, "dish": "Hähnchen mit Reis und Brokkoli", "confidence": "hoch|mittel|niedrig",
- "items": [{"name": "Hähnchenbrust", "grams": 150, "kcal": 165, "protein": 35, "carbs": 0, "fat": 2.5, "sugar": 0, "fiber": 0}],
- "notes": "kurzer Hinweis zur Schätzung"}
-Wenn kein Essen zu sehen ist: {"is_food": false, "dish": "", "confidence": "niedrig", "items": [], "notes": "..."}`
+const FOOD_KEYS_TEXT = FOOD_LIST.map(f => `${f.key}=${f.name}`).join('; ')
 
-export async function analyzePhoto({ file, image, hint = '', signal }) {
+function photoPrompt({ count, plate, hint, memory }) {
+  return `Du bist ein erfahrener Ernährungswissenschaftler. ${count > 1 ? `Du bekommst ${count} Fotos DERSELBEN Mahlzeit (z. B. von oben und von der Seite) – nutze beide für die Mengenschätzung, zähle nichts doppelt.` : 'Analysiere das Foto einer Mahlzeit.'}
+Vorgehen: 1) jedes sichtbare Lebensmittel erkennen (auch Saucen, Öl, Dressing, Getränke). 2) Menge in Gramm schätzen – Referenz: ${plate}. Achte auf Höhe/Dicke der Speisen. 3) Nährwerte mit Referenzwerten (Bundeslebensmittelschlüssel) berechnen; Zubereitungsfett realistisch einrechnen.
+Ordne jedes Lebensmittel, wenn möglich, einem Schlüssel aus dieser Kalora-Datenbank zu (Feld "key", sonst null): ${FOOD_KEYS_TEXT}
+${memory?.length ? `Der Nutzer hat diese Gerichte früher korrigiert – nutze das, wenn das Foto dazu passt:\n${memory.map(m => `- ${m.dish}: ${m.items.map(i => `${Math.round(i.grams)} g ${i.name}`).join(', ')}`).join('\n')}\n` : ''}${hint ? `Hinweis des Nutzers: ${hint}\n` : ''}Antworte NUR mit JSON in genau dieser Form (Zahlen als Zahlen, Texte auf Deutsch):
+{"is_food": true, "dish": "Hähnchen mit Reis und Brokkoli", "confidence": "hoch|mittel|niedrig",
+ "items": [{"name": "Hähnchenbrust", "key": "haehnchenbrust", "grams": 150, "kcal": 165, "protein": 35, "carbs": 0, "fat": 2.5, "sugar": 0, "fiber": 0}],
+ "notes": "kurzer Hinweis, was die Schätzung unsicher macht"}
+Kein Essen zu sehen: {"is_food": false, "dish": "", "confidence": "niedrig", "items": [], "notes": "..."}`
+}
+
+export async function analyzePhoto({ files, images = [], hint = '', plate = 'normaler Teller, ca. 26 cm Durchmesser', memory = [], signal }) {
   const st = await getAIStatus()
   if (st.via === 'claude') {
     const sample = await getSample()
     try {
-      const r = await sample.json(`${PHOTO_PROMPT}${hint ? `\n\nHinweis des Nutzers: ${hint}` : ''}`, { images: [file], signal, cache: false })
+      const r = await sample.json(photoPrompt({ count: files.length, plate, hint, memory }), { images: files, signal, cache: false })
       return normalizePhoto(r)
     } catch (e) { throw wrap(e) }
   }
-  return normalizePhoto(await api('/api/ai/analyze-photo', { method: 'POST', body: { image: image.base64, mediaType: image.mediaType, hint } }))
+  const image = images[0]
+  return normalizePhoto(await api('/api/ai/analyze-photo', { method: 'POST', body: { image: image.base64, mediaType: image.mediaType, hint: `${hint} (Referenz: ${plate})` } }))
 }
 
 function normalizePhoto(r) {
@@ -76,9 +84,24 @@ function normalizePhoto(r) {
     is_food: r?.is_food !== false,
     dish: String(r?.dish || 'Mahlzeit'),
     confidence: ['hoch', 'mittel', 'niedrig'].includes(r?.confidence) ? r.confidence : 'mittel',
-    items: (Array.isArray(r?.items) ? r.items : []).map(i => ({ name: String(i.name || 'Lebensmittel'), grams: n(i.grams), kcal: n(i.kcal), protein: n(i.protein), carbs: n(i.carbs), fat: n(i.fat), sugar: n(i.sugar), fiber: n(i.fiber) })),
+    items: (Array.isArray(r?.items) ? r.items : []).map(i => ({ name: String(i.name || 'Lebensmittel'), key: typeof i.key === 'string' ? i.key : null, grams: n(i.grams), kcal: n(i.kcal), protein: n(i.protein), carbs: n(i.carbs), fat: n(i.fat), sugar: n(i.sugar), fiber: n(i.fiber) })),
     notes: String(r?.notes || ''),
   }
+}
+
+// ---------- Kassenbon lesen (echte Preise) ----------
+export async function scanReceipt({ file, image, signal }) {
+  const st = await getAIStatus()
+  const prompt = `Lies diesen Kassenbon eines deutschen Supermarkts. Erfasse JEDE Artikelzeile mit dem bezahlten Preis (bei Mengenrabatt den Endpreis der Zeile).
+Ordne jeden Artikel, wenn möglich, einem Schlüssel aus dieser Kalora-Datenbank zu (sonst null): ${FOOD_KEYS_TEXT}
+Schätze die gekaufte Menge: "amount" + "unit" (g, kg, ml, l, Stück oder Packung) – z. B. aus "500g", "1,5L", "x2" oder dem Produktnamen.
+Antworte NUR mit JSON: {"store": "Kette (Aldi, Lidl, Rewe, Edeka, Kaufland, Netto, Penny, Norma, Globus oder null)", "date": "TT.MM.JJJJ oder null",
+"items": [{"name": "Bio Vollmilch 3,5%", "key": "vollmilch", "price": 1.29, "amount": 1, "unit": "l"}], "total": 23.45}`
+  if (st.via === 'claude') {
+    const sample = await getSample()
+    try { return await sample.json(prompt, { images: [file], signal, cache: false }) } catch (e) { throw wrap(e) }
+  }
+  return api('/api/ai/receipt', { method: 'POST', body: { image: image.base64, mediaType: image.mediaType } })
 }
 
 // ---------- KI-Coach ----------

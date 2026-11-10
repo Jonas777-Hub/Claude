@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Search, SlidersHorizontal, Sparkles, X, EyeOff } from 'lucide-react'
+import { Search, SlidersHorizontal, Sparkles, X, EyeOff, CalendarDays } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { RecipeCard, Sheet, FoodBackdrop } from '../components/ui.jsx'
@@ -46,7 +46,7 @@ const MEALS = [{ id: null, label: 'Alle' }, { id: 'F', label: 'Frühstück' }, {
 
 export default function Recipes() {
   const { state, targets } = useStore()
-  const { open } = useUI()
+  const { open, go } = useUI()
   const [q, setQ] = useState('')
   const [meal, setMeal] = useState(null)
   const [ingredient, setIngredient] = useState(null)
@@ -117,7 +117,10 @@ export default function Recipes() {
         <span className="food-shade" />
         <div className="inner on-photo row between" style={{ alignItems: 'flex-end', gap: 12 }}>
           <div><div className="small bold" style={{ opacity: .85 }}>{all.length} Rezepte · echte Fotos</div><h1>Rezepte</h1></div>
-          <button className="btn primary sm" onClick={() => open('generator')}><Sparkles size={16} /> Eigenes Rezept</button>
+          <div className="col" style={{ gap: 8, alignItems: 'flex-end' }}>
+            <button className="btn white sm" onClick={() => go('wochenplan')}><CalendarDays size={16} /> Wochenplan</button>
+            <button className="btn primary sm" onClick={() => open('generator')}><Sparkles size={16} /> Eigenes Rezept</button>
+          </div>
         </div>
       </section>
 

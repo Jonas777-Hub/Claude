@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { Home, BookOpen, ChefHat, ShoppingCart, TrendingUp, User, Camera, MessageCircle } from 'lucide-react'
+import { Home, BookOpen, ChefHat, ShoppingCart, TrendingUp, User, Camera, MessageCircle, CalendarDays } from 'lucide-react'
 import { useStore } from './store.jsx'
 import { LOGO } from './logo.js'
 import { Toast } from './components/ui.jsx'
@@ -7,6 +7,7 @@ import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Diary from './pages/Diary.jsx'
 import Recipes from './pages/Recipes.jsx'
+import WeekPlan from './pages/WeekPlan.jsx'
 import Cart from './pages/Cart.jsx'
 import Progress from './pages/Progress.jsx'
 import Coach from './pages/Coach.jsx'
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'start', label: 'Start', icon: Home },
   { id: 'tagebuch', label: 'Tagebuch', icon: BookOpen },
   { id: 'rezepte', label: 'Rezepte', icon: ChefHat },
+  { id: 'wochenplan', label: 'Wochenplan', icon: CalendarDays, desktopOnly: true },
   { id: 'einkauf', label: 'Einkauf', icon: ShoppingCart },
   { id: 'verlauf', label: 'Verlauf', icon: TrendingUp },
   { id: 'coach', label: 'KI-Coach', icon: MessageCircle, desktopOnly: true },
@@ -72,7 +74,7 @@ export default function App() {
   }
 
   const cartCount = state.cart.items.filter(i => !i.checked).length
-  const Page = { start: Dashboard, tagebuch: Diary, rezepte: Recipes, einkauf: Cart, verlauf: Progress, coach: Coach, profil: Profile }[tab] || Dashboard
+  const Page = { start: Dashboard, tagebuch: Diary, rezepte: Recipes, wochenplan: WeekPlan, einkauf: Cart, verlauf: Progress, coach: Coach, profil: Profile }[tab] || Dashboard
 
   return (
     <UICtx.Provider value={ui}>
@@ -97,8 +99,8 @@ export default function App() {
       <nav className="tabbar" aria-label="Navigation">
         {[TABS[0], TABS[1]].map(t => <TabBtn key={t.id} t={t} active={tab === t.id} onClick={() => go(t.id)} />)}
         <button className="tab" onClick={() => open('photo')} aria-label="Essen fotografieren"><span className="tab-fab"><Camera size={26} /></span></button>
-        <TabBtn t={TABS[2]} active={tab === 'rezepte'} onClick={() => go('rezepte')} />
-        <TabBtn t={TABS[3]} active={tab === 'einkauf'} onClick={() => go('einkauf')} count={cartCount} />
+        <TabBtn t={TABS[2]} active={tab === 'rezepte' || tab === 'wochenplan'} onClick={() => go('rezepte')} />
+        <TabBtn t={TABS.find(t => t.id === 'einkauf')} active={tab === 'einkauf'} onClick={() => go('einkauf')} count={cartCount} />
       </nav>
 
       {sheets.map((s, i) => {

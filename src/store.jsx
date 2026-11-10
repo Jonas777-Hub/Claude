@@ -23,6 +23,9 @@ export const DEFAULT_STATE = {
   favorites: [],
   cart: { items: [], shared: null, activity: [], name: 'Einkaufsliste' },
   coachHistory: [],
+  photoMemory: [],
+  weekPlan: null,
+  prices: {},
   settings: {
     theme: 'system',
     displayName: '',

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Share2, Plus, ScanLine, Trash2, Store, Package, History, UserPlus, Users, Wifi, WifiOff, Star, Repeat, Truck, ScanSearch, X } from 'lucide-react'
+import { Share2, Plus, ScanLine, Trash2, Store, Package, History, UserPlus, Users, Wifi, WifiOff, Star, Repeat, Truck, ScanSearch, X, Receipt } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { Sheet, Empty, Segmented, ConfirmButton } from '../components/ui.jsx'
 import { BarcodeScanner, lookupBarcode } from '../components/Scanner.jsx'
 import { CATEGORIES, FOODS, FOOD_LIST, foodMatchesDislike } from '../data/foods.js'
-import { UNITS, cartSummary, formatAmount, groupByCategory, guessCategory, newId, substitutes, suggestProducts } from '../lib/shopping.js'
-import { StoresSheet, ShareSheet, AssistantSheet, OrderSheet } from './CartExtras.jsx'
+import { UNITS, cartSummary, formatAmount, groupByCategory, guessCategory, newId, substitutes, suggestProducts, itemCost, realCost } from '../lib/shopping.js'
+import { StoresSheet, ShareSheet, AssistantSheet, OrderSheet, ReceiptSheet, PriceSheet } from './CartExtras.jsx'
 
 const fmtEur = v => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
 
@@ -16,7 +16,8 @@ export default function Cart() {
   const [sheet, setSheet] = useState(null)
   const [assignFor, setAssignFor] = useState(null)
   const [subFor, setSubFor] = useState(null)
-  const sum = cartSummary(cart.items)
+  const [priceFor, setPriceFor] = useState(null)
+  const sum = cartSummary(cart.items, state.pantry, state.prices || {})
   const mine = cart.items.filter(i => i.assignee === actor)
   const visible = view === 'meine' ? mine : view === 'offen' ? cart.items.filter(i => !i.checked) : cart.items
   const groups = groupByCategory(visible)
@@ -44,10 +45,11 @@ export default function Cart() {
         <div className="grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
           <div><div className="kcal-big" style={{ fontSize: 26 }}>{sum.open}</div><div className="small muted bold">Artikel offen</div></div>
           <div><div className="kcal-big" style={{ fontSize: 26 }}>{sum.recipes}</div><div className="small muted bold">Rezepte</div></div>
-          <div><div className="kcal-big" style={{ fontSize: 26 }}>{fmtEur(sum.cost)}</div><div className="small muted bold">geschätzt</div></div>
+          <div><div className="kcal-big" style={{ fontSize: 26 }}>{fmtEur(sum.cost)}</div><div className="small muted bold">{sum.real ? `${sum.real} echte Preise` : 'geschätzt'}</div></div>
         </div>
         <div className="row mt" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn white sm" onClick={() => setSheet('stores')}><Store size={16} /> Supermärkte finden</button>
+          <button className="btn white sm" onClick={() => setSheet('receipt')}><Receipt size={16} /> Kassenbon scannen</button>
           <button className="btn white sm" onClick={() => setSheet('assistant')}><ScanSearch size={16} /> Shopping Assistant</button>
           <button className="btn white sm" onClick={() => setSheet('order')}><Truck size={16} /> Online bestellen</button>
         </div>
@@ -87,7 +89,9 @@ export default function Cart() {
                     <button className={`check ${it.checked ? 'on' : ''}`} onClick={() => cartOp({ type: 'update', id: it.id, patch: { checked: !it.checked } })} aria-label={it.checked ? 'Als offen markieren' : 'Als gekauft markieren'}>{it.checked ? '✓' : ''}</button>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className={`bold ${it.checked ? 'struck' : ''}`} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name.split(' (')[0]}</div>
-                      <div className="small text-2">{formatAmount(it)}</div>
+                      <div className="small text-2 row" style={{ gap: 8 }}>{formatAmount(it)}
+                        <button className={`badge ${realCost(it, state.prices || {}) != null ? '' : 'gray'}`} style={{ padding: '1px 7px' }} onClick={() => setPriceFor(it)} aria-label="Preis eintragen">{fmtEur(itemCost(it, state.prices || {}))}{realCost(it, state.prices || {}) != null ? ' ✓' : ' ≈'}</button>
+                      </div>
                       <div className="tiny muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.checked ? '✅ gekauft' : '⏳ offen'}{it.recipes?.length ? ` · ${it.recipes.length > 1 ? `${it.recipes.length} Rezepte` : it.recipes[0]}` : ''}</div>
                     </div>
                     {it.assignee
@@ -147,6 +151,8 @@ export default function Cart() {
         </Sheet>
       )}
       {sheet === 'share' && <ShareSheet onClose={() => setSheet(null)} />}
+      {sheet === 'receipt' && <ReceiptSheet onClose={() => setSheet(null)} />}
+      {priceFor && <PriceSheet item={priceFor} onClose={() => setPriceFor(null)} />}
       {sheet === 'stores' && <StoresSheet onClose={() => setSheet(null)} />}
       {sheet === 'assistant' && <AssistantSheet onClose={() => setSheet(null)} />}
       {sheet === 'order' && <OrderSheet onClose={() => setSheet(null)} />}

@@ -58,6 +58,29 @@ export async function analyzePhoto({ imageBase64, mediaType = 'image/jpeg', hint
   return msg.parsed_output
 }
 
+// ---------- Kassenbon lesen ----------
+const ReceiptSchema = z.object({
+  store: z.string().nullable(),
+  date: z.string().nullable(),
+  items: z.array(z.object({ name: z.string(), key: z.string().nullable(), price: z.number(), amount: z.number(), unit: z.enum(['g', 'kg', 'ml', 'l', 'Stück', 'Packung']) })),
+  total: z.number().nullable(),
+})
+
+export async function readReceipt({ imageBase64, mediaType = 'image/jpeg' }) {
+  const keys = FOOD_LIST.map(f => `${f.key}=${f.name}`).join('; ')
+  const msg = await getClient().beta.messages.parse({
+    model: MODEL, max_tokens: 16000, ...FALLBACK,
+    output_config: { effort: 'low', format: betaZodOutputFormat(ReceiptSchema) },
+    messages: [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+      { type: 'text', text: `Lies diesen deutschen Kassenbon: jede Artikelzeile mit bezahltem Preis, geschätzter Menge (amount + unit) und – wenn möglich – Schlüssel aus dieser Datenbank (sonst null): ${keys}. store = Supermarktkette.` },
+    ] }],
+  })
+  assertNotRefused(msg)
+  if (!msg.parsed_output) throw Object.assign(new Error('Kassenbon konnte nicht gelesen werden.'), { status: 502 })
+  return msg.parsed_output
+}
+
 // ---------- KI-Ernährungsberater ----------
 export async function coach({ question, history = [], context }) {
   const system = `Du bist "Kalora Coach", ein freundlicher, kompetenter Ernährungsberater in der App KALORA.

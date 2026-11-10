@@ -98,7 +98,47 @@ export function formatAmount(item) {
   return `${a.toLocaleString('de-DE', { maximumFractionDigits: 2 })} ${item.unit}`
 }
 
-export function itemCost(item) {
+// ---- Echte Preise (vom Kassenbon oder selbst eingetragen) ----
+// prices: { [priceKey]: { perKg?: €/kg, perUnit?: €/Stück|Packung|l, store?, date, name } }
+export const priceKey = item => (item.key ? `k:${item.key}` : `n:${item.name.trim().toLowerCase()}`)
+
+const massG = item => {
+  const a = Number(item.amount) || 0
+  const food = item.key ? FOODS[item.key] : null
+  if (item.unit === 'g' || item.unit === 'ml') return a
+  if (item.unit === 'kg' || item.unit === 'l') return a * 1000
+  if (item.unit === 'Stück' && food?.piece) return a * food.piece
+  return null
+}
+
+export function realCost(item, prices = {}, store = null) {
+  const p = prices[priceKey(item)]
+  if (!p) return null
+  const entry = store && p.byStore?.[store] ? p.byStore[store] : p
+  const g = massG(item)
+  if (entry.perKg != null && g != null) return (g / 1000) * entry.perKg
+  if (entry.perUnit != null) return (item.unit === 'g' || item.unit === 'ml' ? 1 : Number(item.amount) || 1) * entry.perUnit
+  if (entry.perKg != null) return (Number(item.amount) || 1) * entry.perKg * 0.5
+  return null
+}
+
+// Preis, den der Nutzer für genau diese Menge eingibt → als €/kg bzw. €/Einheit speichern
+export function priceFromInput(item, euro, store = null) {
+  const g = massG(item)
+  const base = g ? { perKg: euro / (g / 1000) } : { perUnit: euro / (Number(item.amount) || 1) }
+  return { ...base, store, date: Date.now(), name: item.name }
+}
+
+export function mergePrice(prices, key, entry) {
+  const prev = prices[key] || {}
+  const byStore = { ...(prev.byStore || {}) }
+  if (entry.store) byStore[entry.store] = { perKg: entry.perKg, perUnit: entry.perUnit, date: entry.date }
+  return { ...prices, [key]: { ...prev, ...entry, byStore } }
+}
+
+export function itemCost(item, prices) {
+  const real = prices ? realCost(item, prices) : null
+  if (real != null) return real
   const food = item.key ? FOODS[item.key] : null
   const a = Number(item.amount) || 0
   if (food) {
@@ -112,11 +152,12 @@ export function itemCost(item) {
   return a * (item.unit === 'g' ? 0.008 : item.unit === 'kg' ? 4 : 2)
 }
 
-export function cartSummary(items, pantry = []) {
+export function cartSummary(items, pantry = [], prices = {}) {
   const open = items.filter(i => !i.checked)
   const recipes = new Set(items.flatMap(i => i.recipes || []))
-  const cost = open.reduce((a, i) => a + itemCost(i), 0)
-  return { total: items.length, open: open.length, done: items.length - open.length, recipes: recipes.size, cost }
+  const cost = open.reduce((a, i) => a + itemCost(i, prices), 0)
+  const real = open.filter(i => realCost(i, prices) != null).length
+  return { total: items.length, open: open.length, done: items.length - open.length, recipes: recipes.size, cost, real }
 }
 
 export function groupByCategory(items) {
@@ -176,9 +217,17 @@ export function chainAvailability(chain, items) {
   return { pct: Math.round(((items.length - missing.length) / items.length) * 100), missing }
 }
 
-export function chainPrice(chain, items) {
+export function chainPrice(chain, items, prices = {}) {
   const c = CHAINS[chain]
-  return items.reduce((a, it) => a + itemCost(it) * (c?.priceIndex ?? 1) * (0.96 + hash(chain + it.name + 'p') * 0.08), 0)
+  let realCount = 0
+  const total = items.reduce((a, it) => {
+    const own = realCost(it, prices, chain)
+    const atStore = prices[priceKey(it)]?.byStore?.[chain]
+    if (own != null && atStore) { realCount++; return a + own }
+    if (own != null) { realCount++; const p = prices[priceKey(it)]; const k = p.store && CHAINS[p.store] ? (c?.priceIndex ?? 1) / CHAINS[p.store].priceIndex : 1; return a + own * k }
+    return a + itemCost(it) * (c?.priceIndex ?? 1) * (0.96 + hash(chain + it.name + 'p') * 0.08)
+  }, 0)
+  return { total, realCount }
 }
 
 export function detectChain(name = '', brand = '') {
@@ -186,15 +235,16 @@ export function detectChain(name = '', brand = '') {
   return Object.keys(CHAINS).find(c => s.includes(c.toLowerCase())) || null
 }
 
-export function rankStores(stores, items) {
+export function rankStores(stores, items, prices = {}) {
   const open = items.filter(i => !i.checked)
   const enriched = stores.map(s => {
     const avail = chainAvailability(s.chain, open)
-    return { ...s, availability: avail.pct, missing: avail.missing, price: chainPrice(s.chain, open) }
+    const pr = chainPrice(s.chain, open, prices)
+    return { ...s, availability: avail.pct, missing: avail.missing, price: pr.total, realCount: pr.realCount }
   })
   const maxD = Math.max(...enriched.map(s => s.distance), 1)
-  const prices = enriched.map(s => s.price)
-  const minP = Math.min(...prices), maxP = Math.max(...prices)
+  const ps = enriched.map(s => s.price)
+  const minP = Math.min(...ps), maxP = Math.max(...ps)
   for (const s of enriched) {
     const pNorm = maxP > minP ? (s.price - minP) / (maxP - minP) : 0
     s.score = (s.availability / 100) * 0.5 + (1 - pNorm) * 0.3 + (1 - s.distance / maxD) * 0.2

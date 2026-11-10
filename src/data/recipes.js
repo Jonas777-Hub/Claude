@@ -6,6 +6,7 @@
 import { FOODS, nutrientsFor, foodMatchesDislike } from './foods.js'
 import { MEAL_IMAGES } from './mealImages.js'
 import { STATIC } from '../static.js'
+import { RAW2 } from './recipes2.js'
 
 // Mahlzeiten: F Frühstück, M Mittagessen, A Abendessen, S Snack, D Dessert
 const R = (id, mealId, name, desc, meals, cuisine, time, difficulty, ingredients, steps, tags = []) =>
@@ -296,7 +297,7 @@ export function enrich(r) {
   }
 }
 
-export const RECIPES = RAW.map(enrich)
+export const RECIPES = [...RAW, ...RAW2].map(enrich)
 export const RECIPE_MAP = Object.fromEntries(RECIPES.map(r => [r.id, r]))
 
 export function scaledNutrition(recipe, persons) {

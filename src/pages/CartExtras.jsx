@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { MapPin, Navigation, Loader2, Trophy, Copy, Mail, MessageSquare, Send, Link2, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Crown } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { MapPin, Navigation, Loader2, Trophy, Copy, Mail, MessageSquare, Send, Link2, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Crown, Camera, ImagePlus, Check as CheckIcon } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { Sheet } from '../components/ui.jsx'
 import { BarcodeScanner, lookupBarcode } from '../components/Scanner.jsx'
-import { CHAINS, rankStores, detectChain, haversine, cartToText, substitutes, formatAmount } from '../lib/shopping.js'
+import { CHAINS, rankStores, detectChain, haversine, cartToText, substitutes, formatAmount, priceKey, priceFromInput, mergePrice, realCost } from '../lib/shopping.js'
+import { resizeImage } from '../api.js'
+import { useAIStatus, scanReceipt } from '../lib/ai.js'
 import { FOODS, FOOD_LIST } from '../data/foods.js'
 import { RECIPES } from '../data/recipes.js'
 import { remaining, sumEntries, todayKey, fmt } from '../lib/nutrition.js'
@@ -39,7 +41,7 @@ export function StoresSheet({ onClose }) {
         .filter(s => { const k = s.chain + Math.round(s.distance / 150); if (seen.has(k)) return false; seen.add(k); return true })
         .slice(0, 12)
       if (!stores.length) throw new Error('Keine Supermärkte der unterstützten Ketten im Umkreis von 6 km gefunden.')
-      setSt({ loading: false, err: '', stores: rankStores(stores, items.length ? items : [{ name: 'Basis', key: 'milch', amount: 1000, unit: 'g' }]), place })
+      setSt({ loading: false, err: '', stores: rankStores(stores, items.length ? items : [{ name: 'Basis', key: 'milch', amount: 1000, unit: 'g' }], state.prices || {}), place })
     } catch (e) {
       setSt({ loading: false, err: e.message || 'Suche fehlgeschlagen.', stores: null, place: '' })
     }
@@ -86,11 +88,12 @@ export function StoresSheet({ onClose }) {
                 <div style={{ textAlign: 'right' }}>
                   <div className="bold">{s.availability} %</div>
                   <div className="small">{fmtEur(s.price)}</div>
+                  {s.realCount > 0 && <div className="tiny green bold">{s.realCount} echte Preise</div>}
                 </div>
               </div>
             ))}
           </div>
-          <p className="tiny muted mt">Verfügbarkeit und Preise sind Schätzungen auf Basis des typischen Sortiments und Preisniveaus der Ketten – Supermärkte stellen keine öffentlichen Live-Daten bereit.</p>
+          <p className="tiny muted mt">Preise: wo vorhanden deine echten Preise von Kassenbons, sonst Schätzung nach Preisniveau der Kette. Verfügbarkeit ist eine Schätzung nach typischem Sortiment – Supermärkte stellen keine öffentlichen Live-Daten bereit. Tipp: Scanne nach dem Einkauf deinen Kassenbon, dann werden die Preise immer genauer.</p>
         </>
       )}
     </Sheet>
@@ -234,6 +237,143 @@ export function OrderSheet({ onClose }) {
         </div>
       )}
       <button className="btn block mt" onClick={async () => { await navigator.clipboard?.writeText(text); notify('Liste kopiert') }}><Copy size={16} /> Liste als Text kopieren</button>
+    </Sheet>
+  )
+}
+
+// ---------- Kassenbon scannen: echte Preise lernen ----------
+export function ReceiptSheet({ onClose }) {
+  const { state, update, cartOp, notify } = useStore()
+  const ai = useAIStatus()
+  const camRef = useRef(null)
+  const fileRef = useRef(null)
+  const [photo, setPhoto] = useState(null)
+  const [phase, setPhase] = useState('pick')
+  const [err, setErr] = useState('')
+  const [rows, setRows] = useState([])
+  const [store, setStore] = useState('')
+  const [markBought, setMarkBought] = useState(true)
+
+  const onFile = async f => {
+    if (!f) return
+    const img = await resizeImage(f, 1800, 0.9)
+    setPhoto(img); setPhase('reading'); setErr('')
+    try {
+      const r = await scanReceipt({ file: img.blob, image: img })
+      const items = (Array.isArray(r?.items) ? r.items : []).filter(i => Number(i.price) > 0)
+      if (!items.length) throw new Error('Auf dem Foto wurden keine Artikel mit Preis erkannt. Fotografiere den Bon gerade und vollständig.')
+      setRows(items.map((i, n) => ({ id: n, on: true, name: String(i.name), key: FOODS[i.key] ? i.key : null, price: Number(i.price), amount: Number(i.amount) || 1, unit: ['g', 'kg', 'ml', 'l', 'Stück', 'Packung'].includes(i.unit) ? i.unit : 'Stück' })))
+      setStore(CHAINS[r.store] ? r.store : Object.keys(CHAINS).find(c => String(r.store || '').toLowerCase().includes(c.toLowerCase())) || '')
+      setPhase('review')
+    } catch (e) { setErr(e.message); setPhase('pick') }
+  }
+
+  const save = () => {
+    let prices = { ...(state.prices || {}) }
+    const chosen = rows.filter(r => r.on)
+    for (const r of chosen) {
+      const item = { key: r.key, name: r.key ? FOODS[r.key].name : r.name, amount: r.amount, unit: r.unit }
+      prices = mergePrice(prices, priceKey(item), priceFromInput(item, r.price, store || null))
+    }
+    update(s => ({ ...s, prices }))
+    if (markBought) {
+      for (const it of state.cart.items.filter(i => !i.checked)) {
+        if (chosen.some(r => (r.key && r.key === it.key) || r.name.toLowerCase().includes(it.name.split(' (')[0].toLowerCase()))) cartOp({ type: 'update', id: it.id, patch: { checked: true } })
+      }
+    }
+    notify(`${chosen.length} echte Preise gespeichert${store ? ` (${store})` : ''}`)
+    onClose()
+  }
+
+  const total = rows.filter(r => r.on).reduce((a, r) => a + r.price, 0)
+  return (
+    <Sheet title="Kassenbon scannen" onClose={onClose} full>
+      <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
+      {phase === 'pick' && (
+        <div className="col" style={{ gap: 12 }}>
+          <div className="card center" style={{ padding: 24 }}>
+            <div style={{ fontSize: 46 }}>🧾</div>
+            <h3 className="mt-s">Echte Preise vom Kassenbon</h3>
+            <p className="small muted mt-s">Fotografiere deinen Bon nach dem Einkauf. Claude liest Artikel und Preise aus – Kalora rechnet ab dann mit deinen echten Preisen pro Supermarkt und hakt Gekauftes ab.</p>
+          </div>
+          {err && <p className="small red bold">{err}</p>}
+          {ai && !ai.images && <p className="small muted">Claude ist hier gerade nicht erreichbar. Preise kannst du auch direkt im Einkaufswagen eintippen (auf den Preis eines Artikels tippen).</p>}
+          <div className="row">
+            <button className="btn primary" style={{ flex: 1, height: 52 }} onClick={() => camRef.current.click()} disabled={!ai?.images}><Camera size={18} /> Bon fotografieren</button>
+            <button className="btn" style={{ flex: 1, height: 52 }} onClick={() => fileRef.current.click()} disabled={!ai?.images}><ImagePlus size={18} /> Galerie</button>
+          </div>
+          <p className="tiny muted">Bisher gespeichert: {Object.keys(state.prices || {}).length} echte Preise.</p>
+        </div>
+      )}
+      {phase === 'reading' && (
+        <div className="center mt">
+          {photo && <img src={photo.dataUrl} alt="Kassenbon" className="photo-preview" style={{ objectFit: 'contain', background: '#000' }} />}
+          <Loader2 className="spin mt" size={28} color="var(--green)" />
+          <p className="bold mt-s">Claude liest den Kassenbon …</p>
+        </div>
+      )}
+      {phase === 'review' && (
+        <div className="col" style={{ gap: 12 }}>
+          <div className="card">
+            <div className="card-title">Supermarkt</div>
+            <select className="input" value={store} onChange={e => setStore(e.target.value)} aria-label="Supermarkt">
+              <option value="">Unbekannt</option>
+              {Object.keys(CHAINS).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="card" style={{ padding: '4px 12px' }}>
+            <div className="list">
+              {rows.map(r => (
+                <div key={r.id} className="list-item">
+                  <button className={`check ${r.on ? 'on' : ''}`} onClick={() => setRows(l => l.map(x => (x.id === r.id ? { ...x, on: !x.on } : x)))} aria-label="Übernehmen">{r.on ? '✓' : ''}</button>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="bold small" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                    <div className="tiny muted">{r.amount} {r.unit}{r.key ? ` · = ${FOODS[r.key].name}` : ' · nicht zugeordnet'}</div>
+                  </div>
+                  <input className="input" type="number" step="0.01" inputMode="decimal" value={r.price} onChange={e => setRows(l => l.map(x => (x.id === r.id ? { ...x, price: +e.target.value } : x)))} style={{ width: 86, height: 38 }} aria-label="Preis in Euro" />
+                  <span className="small">€</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <label className="row between card" style={{ cursor: 'pointer' }}>
+            <span className="small bold">Passende Artikel im Einkaufswagen abhaken</span>
+            <input type="checkbox" checked={markBought} onChange={e => setMarkBought(e.target.checked)} style={{ width: 22, height: 22, accentColor: 'var(--green)' }} />
+          </label>
+          <button className="btn primary block" style={{ height: 52 }} onClick={save}><CheckIcon size={18} /> {rows.filter(r => r.on).length} Preise speichern · {fmtEur(total)}</button>
+          <button className="btn block" onClick={() => { setPhoto(null); setRows([]); setPhase('pick') }}>Anderen Bon scannen</button>
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+// ---------- Preis eines Artikels selbst eintragen ----------
+export function PriceSheet({ item, onClose }) {
+  const { state, update, notify } = useStore()
+  const known = realCost(item, state.prices || {})
+  const [euro, setEuro] = useState(known != null ? known.toFixed(2) : '')
+  const [store, setStore] = useState(state.prices?.[priceKey(item)]?.store || '')
+  const save = () => {
+    const v = parseFloat(String(euro).replace(',', '.'))
+    if (!(v > 0)) return
+    update(s => ({ ...s, prices: mergePrice(s.prices || {}, priceKey(item), priceFromInput(item, v, store || null)) }))
+    notify('Preis gespeichert')
+    onClose()
+  }
+  return (
+    <Sheet title="Preis eintragen" onClose={onClose}>
+      <p className="small muted">Was kostet <b>{formatAmount(item)} {item.name}</b>? Kalora rechnet den Preis auf andere Mengen um.</p>
+      <div className="row mt">
+        <input className="input" type="text" inputMode="decimal" placeholder="z. B. 1,99" value={euro} onChange={e => setEuro(e.target.value)} aria-label="Preis in Euro" autoFocus />
+        <span className="bold">€</span>
+      </div>
+      <select className="input mt-s" value={store} onChange={e => setStore(e.target.value)} aria-label="Supermarkt">
+        <option value="">Supermarkt (optional)</option>
+        {Object.keys(CHAINS).map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <button className="btn primary block mt" onClick={save}><CheckIcon size={18} /> Speichern</button>
     </Sheet>
   )
 }

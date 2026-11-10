@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Camera, Search, TrendingUp, MessageCircle, RefreshCw, Droplets, Plus, Minus, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Camera, Search, TrendingUp, MessageCircle, RefreshCw, Droplets, Plus, Minus, Sparkles, CheckCircle2, CalendarDays } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { Ring, NutrientRing, RecipeImage, MacroLine, FoodBackdrop, TINT } from '../components/ui.jsx'
@@ -171,6 +171,11 @@ export default function Dashboard() {
           </div>
         </button>
       </div>
+
+      <button className="card row mt" style={{ gap: 14, textAlign: 'left', width: '100%', background: 'linear-gradient(135deg, color-mix(in srgb, #F59E0B 14%, var(--card)), color-mix(in srgb, #EC4899 10%, var(--card)))' }} onClick={() => go('wochenplan')}>
+        <span style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--grad-warm)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CalendarDays size={26} /></span>
+        <span style={{ minWidth: 0 }}><div className="bold">{state.weekPlan ? 'Dein Wochenplan' : 'Wochenplan erstellen'}</div><div className="small muted">{state.weekPlan ? 'Was steht diese Woche an? Mit einem Tipp alles einkaufen.' : '7 Tage passend zu deinen Zielen – mit einem Fingertipp.'}</div></span>
+      </button>
 
       {/* Heute gegessen */}
       <h2 className="section-title">Heute gegessen <button className="link" onClick={() => go('tagebuch')}>Alle anzeigen</button></h2>
