@@ -1,6 +1,6 @@
 // Verpacktes Produkt fotografieren (z. B. Proteinriegel): Produkt erkennen, Nährwerte vom Etikett lesen,
 // Menge wählen und alle Makros eintragen. Erkannte Produkte landen in „Meine Produkte".
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, ImagePlus, Loader2, Sparkles, Check, X, AlertTriangle, RotateCcw, ScanLine, Package } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { Stepper } from '../components/ui.jsx'
@@ -12,8 +12,8 @@ import { newId } from '../lib/shopping.js'
 
 const SOURCE = {
   etikett: ['✓ Vom Etikett abgelesen', ''],
-  bekannt: ['Herstellerangaben (Etikett nicht sichtbar)', 'orange'],
-  geschätzt: ['Geschätzt – Nährwerttabelle fotografieren für exakte Werte', 'red'],
+  bekannt: ['✓ Herstellerangaben dieses Produkts', ''],
+  geschätzt: ['Geschätzt – Produkt nicht eindeutig erkannt, bitte prüfen', 'orange'],
   openfoodfacts: ['✓ Open Food Facts (per Barcode)', ''],
 }
 
@@ -27,12 +27,12 @@ async function detectBarcode(blob) {
   } catch { return null }
 }
 
-export default function ProductPhoto({ ai, slot, setSlot, onDone }) {
+export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos }) {
   const { state, update, addEntries, notify } = useStore()
   const camRef = useRef(null)
   const fileRef = useRef(null)
   const ctl = useRef(null)
-  const [photos, setPhotos] = useState([])
+  const [photos, setPhotos] = useState(initialPhotos || [])
   const [phase, setPhase] = useState('pick')
   const [err, setErr] = useState('')
   const [prod, setProd] = useState(null)
@@ -43,10 +43,20 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone }) {
 
   const onFile = async f => {
     if (!f) return
-    try { const r = await resizeImage(f, 1600, 0.9); setPhotos(p => [...p, r].slice(0, 2)); setPhase('pick') } catch (e) { notify(e.message, 'err') }
+    try {
+      const r = await resizeImage(f, 1600, 0.9)
+      const next = [...photos, r].slice(0, 2)
+      setPhotos(next); setPhase('pick')
+      if (ai?.images) analyze(next) // sofort erkennen – ein Foto von vorne reicht
+    } catch (e) { notify(e.message, 'err') }
   }
 
-  const analyze = async () => {
+  // Foto aus dem Mahlzeiten-Modus übernommen → direkt erkennen
+  useEffect(() => { if (initialPhotos?.length && ai?.images) analyze(initialPhotos) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const analyze = async (list = photos) => {
+    const photos = list
+    if (!photos.length) return
     setPhase('analyzing'); setErr('')
     ctl.current = new AbortController()
     try {
@@ -107,7 +117,7 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone }) {
             <div className="card center" style={{ padding: 22 }}>
               <div style={{ fontSize: 46 }}>🍫</div>
               <h3 className="mt-s">Verpacktes Produkt fotografieren</h3>
-              <p className="small muted mt-s">Proteinriegel, Joghurt, Getränk, Chips … Fotografiere die Vorderseite – und für exakte Werte zusätzlich die <b>Nährwerttabelle</b>.</p>
+              <p className="small muted mt-s">Proteinriegel, Joghurt, Getränk, Chips … Einfach die <b>Vorderseite</b> fotografieren – Kalora erkennt Marke und Sorte und trägt die Nährwerte ein.</p>
             </div>
           ) : (
             <div className="grid" style={{ gridTemplateColumns: photos.length > 1 ? '1fr 1fr' : '1fr', gap: 8 }}>
@@ -121,11 +131,11 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone }) {
             </div>
           )}
           <div className="row">
-            <button className="btn primary" style={{ flex: 1, height: 52 }} onClick={() => camRef.current.click()} disabled={photos.length >= 2}><Camera size={20} /> {photos.length ? 'Nährwerttabelle' : 'Kamera'}</button>
+            <button className="btn primary" style={{ flex: 1, height: 52 }} onClick={() => camRef.current.click()} disabled={photos.length >= 2}><Camera size={20} /> {photos.length ? 'Rückseite (optional)' : 'Kamera'}</button>
             <button className="btn" style={{ flex: 1, height: 52 }} onClick={() => fileRef.current.click()} disabled={photos.length >= 2}><ImagePlus size={18} /> Galerie</button>
           </div>
           {err && <div className="card tinted row" style={{ alignItems: 'flex-start' }}><AlertTriangle size={20} color="var(--red)" style={{ flexShrink: 0 }} /><p className="small">{err}</p></div>}
-          {ai?.enabled && <button className="btn primary block" style={{ height: 56 }} onClick={analyze} disabled={!photos.length}>{err ? <><RotateCcw size={18} /> Erneut versuchen</> : <><Sparkles size={18} /> Produkt erkennen</>}</button>}
+          {ai?.enabled && <button className="btn primary block" style={{ height: 56 }} onClick={() => analyze()} disabled={!photos.length}>{err ? <><RotateCcw size={18} /> Erneut versuchen</> : <><Sparkles size={18} /> Produkt erkennen</>}</button>}
           {ai && !ai.enabled && <p className="small muted">Claude ist hier nicht erreichbar. Nutze stattdessen „Lebensmittel suchen" → <b>Barcode scannen</b>.</p>}
           {(state.myProducts || []).length > 0 && (
             <div className="card">

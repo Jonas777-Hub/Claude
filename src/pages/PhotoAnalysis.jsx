@@ -54,6 +54,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
   const [useDb, setUseDb] = useState(true)
   const [recipeQ, setRecipeQ] = useState('')
   const [kind, setKind] = useState(initialKind || 'mahlzeit')
+  const [handoff, setHandoff] = useState(null)
 
   const memory = state.photoMemory || []
 
@@ -61,18 +62,24 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
     if (!f) return
     try {
       const r = await resizeImage(f, 1400, 0.86)
-      setPhotos(p => [...p, r].slice(0, 2))
+      const next = [...photos, r].slice(0, 2)
+      setPhotos(next)
       setPhase('pick')
+      // Erstes Foto: sofort erkennen (Mahlzeit ODER verpacktes Produkt) – kein extra Tippen nötig
+      if (next.length === 1 && ai?.images) analyze(next)
     } catch (e) { notify(e.message, 'err') }
   }
 
-  const analyze = async () => {
+  const analyze = async (list = photos) => {
+    const photos = list
     if (!photos.length) return
     setPhase('analyzing'); setError('')
     ctl.current = new AbortController()
     try {
       const plateRef = PLATES.find(p => p.id === plate).ref
       const r = await analyzePhoto({ files: photos.map(p => p.blob), images: photos, hint, plate: plateRef, memory: memory.slice(0, 12), signal: ctl.current.signal })
+      // Verpacktes Produkt erkannt → automatisch in den Produkt-Modus mit demselben Foto
+      if (r.packaged) { setHandoff(photos); setKind('produkt'); setPhase('pick'); return }
       if (!r.is_food || !r.items.length) { setError('Auf dem Foto wurde kein Essen erkannt. Fotografiere den Teller von schräg oben bei gutem Licht.'); setPhase('error'); return }
       setResult(r)
       setDish(r.dish)
@@ -136,7 +143,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
           <Segmented value={kind} onChange={setKind} options={[{ id: 'mahlzeit', label: '🍽️ Mahlzeit' }, { id: 'produkt', label: '🍫 Verpacktes Produkt' }]} />
         </div>
       )}
-      {kind === 'produkt' ? <ProductPhoto ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} /> : <>
+      {kind === 'produkt' ? <ProductPhoto ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} initialPhotos={handoff} /> : <>
 
       {/* ---------- Fotos aufnehmen ---------- */}
       {(phase === 'pick' || phase === 'error') && (
@@ -180,7 +187,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
 
           {ai === null && <div className="center small muted"><Loader2 size={16} className="spin" /> Verbinde mit Claude …</div>}
           {ai?.enabled && (
-            <button className="btn primary block" style={{ height: 56 }} onClick={analyze} disabled={!photos.length}>
+            <button className="btn primary block" style={{ height: 56 }} onClick={() => analyze()} disabled={!photos.length}>
               {phase === 'error' ? <><RotateCcw size={18} /> Erneut analysieren</> : <><Sparkles size={18} /> Kalorien berechnen</>}
             </button>
           )}
