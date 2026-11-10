@@ -3,6 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api, getToken, setToken, wsUrl } from './api.js'
 import { calcTargets, todayKey } from './lib/nutrition.js'
 import { mergeItems, newId } from './lib/shopping.js'
+import { connectCloud } from './lib/cloud.js'
+import { STATIC } from './static.js'
 
 const KEY = 'kalora:v1'
 const QUEUE_KEY = 'kalora:cartQueue'
@@ -78,6 +80,36 @@ export function StoreProvider({ children }) {
     window.addEventListener('online', on); window.addEventListener('offline', off)
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
+
+  // ---------- Speichern am Claude-Konto (Web-App): automatisch, ohne Anmeldung ----------
+  const cloudRef = useRef(null)
+  const [cloud, setCloud] = useState(STATIC ? 'connecting' : 'off') // connecting | on | off
+  useEffect(() => {
+    if (!STATIC) return
+    let alive = true
+    connectCloud().then(async c => {
+      if (!alive) return
+      if (!c) { setCloud('off'); return }
+      try {
+        const remote = await c.load()
+        const local = stateRef.current
+        if (remote && (remote.updatedAt > (local.updatedAt || 0) || !local.profile)) {
+          // Daten vom Konto übernehmen (z. B. anderes Gerät), lokales Tagebuch ergänzen
+          setState(s => ({ ...DEFAULT_STATE, ...s, ...remote, log: { ...s.log, ...remote.log }, settings: { ...DEFAULT_STATE.settings, ...remote.settings }, cart: { ...DEFAULT_STATE.cart, ...(remote.cart || s.cart) } }))
+        } else if (local.profile) {
+          c.save(local)
+        }
+      } catch { /* weiter lokal */ }
+      cloudRef.current = c
+      setCloud('on')
+    })
+    return () => { alive = false }
+  }, [])
+  useEffect(() => {
+    if (cloud !== 'on' || !state.profile) return
+    const t = setTimeout(() => cloudRef.current?.save(stateRef.current), 1500)
+    return () => clearTimeout(t)
+  }, [state, cloud])
 
   // ---------- Konto & Cloud-Sync ----------
   const pull = useCallback(async () => {
@@ -242,6 +274,7 @@ export function StoreProvider({ children }) {
   const targets = useMemo(() => calcTargets(state.profile), [state.profile])
 
   const value = {
+    cloud,
     state, update, user, sync, online, login, logout, targets, toast, notify, setToast,
     addEntries, removeEntry, updateEntry, addWeight, addWater,
     cartOp, shareCart, joinCart, leaveCart, actor,

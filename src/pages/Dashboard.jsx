@@ -7,9 +7,9 @@ import { NUTRIENTS, fmt, nutrientStatus, remaining, sumEntries, todayKey } from 
 import { learnPreferences, todayPlan } from '../lib/recommend.js'
 
 export function SyncDot({ light }) {
-  const { sync, online, user } = useStore()
+  const { sync, online, user, cloud } = useStore()
   const map = { synced: ['var(--green)', 'Synchronisiert'], pending: ['var(--orange)', 'Speichert …'], offline: ['var(--muted)', 'Offline'], error: ['var(--red)', 'Sync-Fehler'], local: ['var(--muted)', 'Nur lokal'] }
-  const [c, l] = !online ? map.offline : map[user ? sync.status : 'local'] || map.local
+  const [c, l] = cloud === 'on' ? ['var(--green)', 'Am Claude-Konto gespeichert'] : !online ? map.offline : map[user ? sync.status : 'local'] || map.local
   return <span className={`row tiny ${light ? '' : 'muted'}`} style={{ gap: 5, opacity: light ? .85 : 1 }} title={l}><span className="sync-dot" style={{ background: c }} />{l}</span>
 }
 

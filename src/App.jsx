@@ -33,7 +33,7 @@ const TABS = [
 ]
 
 export default function App() {
-  const { state, toast, setToast, joinCart, notify } = useStore()
+  const { state, toast, setToast, joinCart, notify, cloud } = useStore()
   const [tab, setTab] = useState(() => (location.pathname.startsWith('/cart/') ? 'einkauf' : 'start'))
   const [sheets, setSheets] = useState([])
 
@@ -63,6 +63,17 @@ export default function App() {
   const go = useCallback(t => { setTab(t); setSheets([]); window.scrollTo({ top: 0 }) }, [])
 
   const ui = { open, close, closeAll, go, tab }
+
+  // Kurz warten, ob am Claude-Konto schon Daten liegen – sonst würde das Onboarding unnötig erscheinen
+  if (!state.profile && cloud === 'connecting') {
+    return (
+      <div className="onb" style={{ justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+        <img src={LOGO} alt="" style={{ width: 64, height: 64 }} />
+        <div className="tagline">Track. Analyse. Erfolg.</div>
+        <p className="small muted">Deine Daten werden geladen …</p>
+      </div>
+    )
+  }
 
   if (!state.profile) {
     return (

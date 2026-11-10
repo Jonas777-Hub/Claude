@@ -33,6 +33,13 @@ export function AuthForm({ onDone }) {
   )
 }
 
+function CloudInfo() {
+  const { cloud } = useStore()
+  return cloud === 'on'
+    ? <p className="small text-2">✅ <b>Automatisch gespeichert</b> – deine Daten liegen privat an deinem Claude-Konto. Du musst dich nicht anmelden: Öffne Kalora im Browser oder in der Claude-App, alles ist überall gleich. Niemand sonst kann deine Daten sehen.</p>
+    : <p className="small text-2">Deine Daten werden in diesem Browser gespeichert. Öffne Kalora über claude.ai (angemeldet), dann werden sie automatisch an deinem Claude-Konto gespeichert und sind auf allen Geräten gleich.</p>
+}
+
 export default function Profile() {
   const { state, update, targets, user, logout, addWeight, notify } = useStore()
   const p = state.profile
@@ -69,7 +76,7 @@ export default function Profile() {
       {/* Konto */}
       <Section icon={Cloud} title="Konto & Cloud-Synchronisierung">
         {STATIC ? (
-          <p className="small text-2">Das ist die Web-Vorschau von Kalora. Deine Daten bleiben in diesem Browser gespeichert. Konto, Cloud-Sync, geteilter Einkaufswagen und KI-Fotoerkennung laufen, sobald der Kalora-Server betrieben wird (siehe README).</p>
+          <CloudInfo />
         ) : user ? (
           <div className="row between">
             <div><div className="bold">{user.name}</div><div className="small muted">{user.email}</div></div>
