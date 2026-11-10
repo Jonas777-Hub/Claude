@@ -100,7 +100,7 @@ export default function Dashboard() {
           <FoodBackdrop ids={['haehnchen-shawarma', 'ofenlachs-fenchel', 'gefuellte-paprika-quinoa']} />
           <span className="food-shade" />
           <span className="cam-icon"><Camera size={32} /></span>
-          <span><h3>Essen fotografieren</h3><p>KI erkennt Gericht, Portion & Nährwerte</p></span>
+          <span><h3>Essen fotografieren</h3><p>Teller oder verpacktes Produkt – KI erkennt alle Makros</p></span>
         </button>
         <button className="card row" style={{ gap: 14, textAlign: 'left' }} onClick={() => open('search')}>
           <span className="cam-icon" style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--green-soft)', color: 'var(--green-600)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Search size={24} /></span>

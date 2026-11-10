@@ -63,6 +63,10 @@ export default function FoodSearch({ onClose, slot: initialSlot }) {
           )}
           {!q && <p className="small muted mt">Datenbank mit {FOOD_LIST.length} Grundnahrungsmitteln plus Millionen Markenprodukte über Open Food Facts.</p>}
           <div className="list mt-s">
+            {(state.myProducts || []).filter(p => !q || p.name.toLowerCase().includes(q.toLowerCase())).slice(0, q ? 10 : 5).map(p => {
+              const f = { key: null, off: p.id, name: `📦 ${p.name}`, kcal: p.per100.kcal, p: p.per100.p, c: p.per100.c, f: p.per100.f, s: p.per100.s, fi: p.per100.fi, piece: p.portion?.grams || null, image: null }
+              return <FoodRow key={p.id} f={f} onClick={() => setSel(f)} />
+            })}
             {local.map(f => <FoodRow key={f.key} f={f} onClick={() => setSel(f)} />)}
           </div>
           {q.length >= 3 && (

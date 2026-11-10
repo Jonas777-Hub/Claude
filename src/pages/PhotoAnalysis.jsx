@@ -8,6 +8,8 @@ import { useAIStatus, analyzePhoto } from '../lib/ai.js'
 import { SLOTS, fmt, slotForTime } from '../lib/nutrition.js'
 import { FOODS, searchFoods, nutrientsFor } from '../data/foods.js'
 import { RECIPES } from '../data/recipes.js'
+import ProductPhoto from './ProductPhoto.jsx'
+import { Segmented } from '../components/ui.jsx'
 
 export { useAIStatus }
 
@@ -30,7 +32,7 @@ const fromDb = (key, grams, name) => {
   return { name: name || FOODS[key].name, key, grams, kcal: n.kcal, protein: n.p, carbs: n.c, fat: n.f, sugar: n.s, fiber: n.fi, db: true }
 }
 
-export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
+export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initialKind }) {
   const { state, update, addEntries, notify } = useStore()
   const { open } = useUI()
   const ai = useAIStatus()
@@ -51,6 +53,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
   const [adding, setAdding] = useState('')
   const [useDb, setUseDb] = useState(true)
   const [recipeQ, setRecipeQ] = useState('')
+  const [kind, setKind] = useState(initialKind || 'mahlzeit')
 
   const memory = state.photoMemory || []
 
@@ -127,6 +130,13 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
     <Sheet title="Kalorien per Foto" onClose={() => { ctl.current?.abort(); onClose() }} full>
       <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
+
+      {(phase === 'pick' || phase === 'error') && (
+        <div style={{ marginBottom: 12 }}>
+          <Segmented value={kind} onChange={setKind} options={[{ id: 'mahlzeit', label: '🍽️ Mahlzeit' }, { id: 'produkt', label: '🍫 Verpacktes Produkt' }]} />
+        </div>
+      )}
+      {kind === 'produkt' ? <ProductPhoto ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} /> : <>
 
       {/* ---------- Fotos aufnehmen ---------- */}
       {(phase === 'pick' || phase === 'error') && (
@@ -283,6 +293,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
           <button className="btn block" onClick={() => { setPhotos([]); setResult(null); setItems([]); setPhase('pick') }}>Neues Foto</button>
         </div>
       )}
+      </>}
     </Sheet>
   )
 }

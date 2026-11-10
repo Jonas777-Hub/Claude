@@ -24,6 +24,7 @@ export const DEFAULT_STATE = {
   cart: { items: [], shared: null, activity: [], name: 'Einkaufsliste' },
   coachHistory: [],
   photoMemory: [],
+  myProducts: [],
   weekPlan: null,
   prices: {},
   settings: {

@@ -65,6 +65,44 @@ ${memory?.length ? `Der Nutzer hat diese Gerichte früher korrigiert – nutze d
 Kein Essen zu sehen: {"is_food": false, "dish": "", "confidence": "niedrig", "items": [], "notes": "..."}`
 }
 
+// ---------- Verpacktes Produkt (z. B. Proteinriegel) ----------
+const PRODUCT_PROMPT = n => `Du bekommst ${n > 1 ? `${n} Fotos EINES verpackten Lebensmittels (z. B. Vorderseite und Nährwerttabelle)` : 'ein Foto eines verpackten Lebensmittels'} – z. B. Proteinriegel, Joghurt, Getränk, Chips, Fertiggericht.
+1) Erkenne Marke, Produktname und Sorte.
+2) Wenn eine Nährwerttabelle sichtbar ist: lies die Werte EXAKT ab (pro 100 g bzw. 100 ml) → source "etikett".
+   Wenn nicht: nutze die bekannten Herstellerangaben dieses Produkts → source "bekannt"; nur wenn du das Produkt nicht kennst, schätze → source "geschätzt".
+3) Lies – wenn sichtbar – Portionsgröße (z. B. "1 Riegel = 45 g"), Packungsinhalt (Gramm/ml) und die EAN-Nummer unter dem Barcode.
+Antworte NUR mit JSON:
+{"is_product": true, "name": "Protein Bar Chocolate Brownie", "brand": "Marke", "ean": "4012345678901 oder null",
+ "source": "etikett|bekannt|geschätzt", "confidence": "hoch|mittel|niedrig",
+ "per100": {"kcal": 380, "protein": 33, "carbs": 30, "sugar": 2.5, "fat": 13, "fiber": 12},
+ "unit": "g|ml", "portion": {"label": "1 Riegel", "grams": 45}, "package_grams": 45, "notes": "kurzer Hinweis"}
+Kein verpacktes Lebensmittel zu sehen: {"is_product": false, "name": "", "notes": "..."}`
+
+export async function analyzeProduct({ files, images = [], signal }) {
+  const st = await getAIStatus()
+  let r
+  if (st.via === 'claude') {
+    const sample = await getSample()
+    try { r = await sample.json(PRODUCT_PROMPT(files.length), { images: files, signal, cache: false }) } catch (e) { throw wrap(e) }
+  } else {
+    r = await api('/api/ai/analyze-product', { method: 'POST', body: { image: images[0].base64, mediaType: images[0].mediaType } })
+  }
+  const n = v => Math.max(0, Number(v) || 0)
+  const p = r?.per100 || {}
+  return {
+    is_product: r?.is_product !== false && !!r?.name,
+    name: String(r?.name || ''), brand: r?.brand ? String(r.brand) : '',
+    ean: r?.ean && /^\d{8,14}$/.test(String(r.ean)) ? String(r.ean) : null,
+    source: ['etikett', 'bekannt', 'geschätzt'].includes(r?.source) ? r.source : 'geschätzt',
+    confidence: ['hoch', 'mittel', 'niedrig'].includes(r?.confidence) ? r.confidence : 'mittel',
+    per100: { kcal: n(p.kcal), p: n(p.protein), c: n(p.carbs), s: n(p.sugar), f: n(p.fat), fi: n(p.fiber) },
+    unit: r?.unit === 'ml' ? 'ml' : 'g',
+    portion: r?.portion && n(r.portion.grams) ? { label: String(r.portion.label || '1 Portion'), grams: n(r.portion.grams) } : null,
+    packageGrams: n(r?.package_grams) || null,
+    notes: String(r?.notes || ''),
+  }
+}
+
 export async function analyzePhoto({ files, images = [], hint = '', plate = 'normaler Teller, ca. 26 cm Durchmesser', memory = [], signal }) {
   const st = await getAIStatus()
   if (st.via === 'claude') {
