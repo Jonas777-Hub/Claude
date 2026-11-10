@@ -5,7 +5,7 @@
 // Mengen gelten für 1 Portion (1 Person). Nährwerte werden aus der Lebensmitteldatenbank berechnet.
 import { FOODS, nutrientsFor, foodMatchesDislike } from './foods.js'
 import { MEAL_IMAGES } from './mealImages.js'
-import { STATIC } from '../static.js'
+import { LOCAL_IMAGES } from '../static.js'
 import { RAW2 } from './recipes2.js'
 
 // Mahlzeiten: F Frühstück, M Mittagessen, A Abendessen, S Snack, D Dessert
@@ -287,7 +287,7 @@ export function enrich(r) {
   const img = MEAL_IMAGES[r.mealId]
   return {
     ...r,
-    image: img ? (STATIC ? `img/m/${r.mealId}.jpg` : img.url) : null,
+    image: img ? (LOCAL_IMAGES ? `img/m/${r.mealId}.jpg` : img.url) : null,
     custom: !!r.custom,
     imageTitle: img ? img.name : null,
     nutrition: per,
@@ -311,5 +311,5 @@ export function recipeHasDislike(recipe, dislikes) {
 
 export function imageUrl(recipe, size) {
   if (!recipe?.image) return null
-  return size && !STATIC ? `${recipe.image}/${size}` : recipe.image
+  return size && !LOCAL_IMAGES ? `${recipe.image}/${size}` : recipe.image
 }

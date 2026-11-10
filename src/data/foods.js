@@ -248,7 +248,7 @@ const RAW = [
   ['wasser', 'Mineralwasser', 0, 0, 0, 0, 0, 0, 'gt', 0.4, 'V', null, null],
 ]
 
-import { STATIC } from '../static.js'
+import { LOCAL_IMAGES } from '../static.js'
 
 export const CATEGORIES = {
   og: { name: 'Obst & Gemüse', emoji: '🥦' },
@@ -269,7 +269,7 @@ for (const [key, name, kcal, p, c, f, s, fi, cat, price, type, piece, tm] of RAW
   FOODS[key] = {
     key, name, kcal, p, c, f, s, fi, cat, price, type,
     piece: piece || null,
-    image: tm ? (STATIC ? `img/i/${key}.webp` : `https://www.themealdb.com/images/ingredients/${encodeURIComponent(tm)}-small.png`) : null,
+    image: tm ? (LOCAL_IMAGES ? `img/i/${key}.webp` : `https://www.themealdb.com/images/ingredients/${encodeURIComponent(tm)}-small.png`) : null,
     vegan: type === 'V',
     vegetarian: type === 'V' || type === 'v',
   }
