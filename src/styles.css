@@ -314,3 +314,119 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
   .page { padding: 28px 32px; }
   .toast { bottom: 30px; }
 }
+
+/* =====================================================================
+   Fenster fixieren: alle Fenster respektieren die Bedienleiste oben
+   (Safe Area) und haben auf dem Handy eine feste, volle Höhe.
+   ===================================================================== */
+body.locked { overflow: hidden; }
+.overlay { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); overscroll-behavior: contain; }
+.sheet { display: flex; flex-direction: column; overflow: hidden; height: calc(100dvh - env(safe-area-inset-top, 0px) - 10px); max-height: none; }
+.sheet .sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+.sheet-head { position: relative; flex-shrink: 0; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.overlay .overlay { padding-top: calc(env(safe-area-inset-top, 0px) + 22px); }
+.dialog { max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px); overflow-y: auto; }
+.lightbox { padding-top: env(safe-area-inset-top, 0px); }
+.page { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+.toast { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 720px) {
+  .overlay { padding: 24px; }
+  .sheet { height: auto; max-height: min(88dvh, 900px); }
+  .sheet.full { height: min(88dvh, 900px); }
+}
+
+/* =====================================================================
+   Farbe & Essen im Hintergrund
+   ===================================================================== */
+:root {
+  --grad-green: linear-gradient(135deg, #22C55E 0%, #10B981 45%, #0EA5A4 100%);
+  --grad-warm: linear-gradient(135deg, #F59E0B 0%, #F97316 55%, #EF4444 100%);
+  --grad-berry: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);
+  --glow-1: rgba(34, 197, 94, .16);
+  --glow-2: rgba(249, 115, 22, .12);
+  --glow-3: rgba(139, 92, 246, .10);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glow-1: rgba(34,197,94,.14); --glow-2: rgba(249,115,22,.08); --glow-3: rgba(139,92,246,.10); } }
+:root[data-theme="dark"] { --glow-1: rgba(34,197,94,.14); --glow-2: rgba(249,115,22,.08); --glow-3: rgba(139,92,246,.10); }
+
+body {
+  background:
+    radial-gradient(900px 520px at -10% -8%, var(--glow-1), transparent 60%),
+    radial-gradient(700px 480px at 110% 4%, var(--glow-2), transparent 60%),
+    radial-gradient(800px 600px at 50% 110%, var(--glow-3), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* Foto-Mosaik aus echten Rezeptfotos als Hintergrund */
+.food-bg { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; overflow: hidden; z-index: 0; pointer-events: none; }
+.food-bg img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); }
+.food-bg.blur img { filter: blur(2px) saturate(1.15); }
+.food-shade { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.on-photo { position: relative; z-index: 2; }
+
+.hero-food { position: relative; overflow: hidden; border-radius: 28px; color: #fff; margin-bottom: 14px; box-shadow: 0 20px 50px rgba(6, 78, 59, .28); }
+.hero-food .food-shade { background: linear-gradient(160deg, rgba(4, 47, 30, .55) 0%, rgba(5, 95, 70, .72) 45%, rgba(6, 78, 59, .94) 100%); }
+.hero-food .inner { padding: 18px 18px 20px; }
+.hero-food .muted, .hero-food .sub { color: rgba(255,255,255,.82) !important; }
+.hero-food .icon-btn { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; backdrop-filter: blur(10px); }
+.hero-food .avatar { background: #fff; color: #15803D; }
+.hero-food .ring .ring-track { stroke: rgba(255,255,255,.2); }
+.hero-food h1 { font-size: 28px; line-height: 1.1; }
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.hero-stat { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.18); border-radius: 16px; padding: 10px 12px; backdrop-filter: blur(10px); }
+.hero-stat .v { font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+.hero-stat .l { font-size: 11px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: .06em; }
+
+/* farbige Nährwert-Kacheln */
+.open-item.tint { background: color-mix(in srgb, var(--tint) 13%, var(--card)); border-color: color-mix(in srgb, var(--tint) 28%, transparent); }
+.open-item.tint .v { color: color-mix(in srgb, var(--tint) 80%, var(--text)); }
+.open-item.tint .l { color: color-mix(in srgb, var(--tint) 60%, var(--text-2)); }
+.mini-ring.tint { background: color-mix(in srgb, var(--tint) 10%, var(--card)); border-color: color-mix(in srgb, var(--tint) 24%, transparent); }
+.mini-ring.tint .lbl { color: color-mix(in srgb, var(--tint) 75%, var(--text)); }
+
+/* Kamera-Button mit Foto */
+.camera-btn { background: none; isolation: isolate; min-height: 104px; }
+.camera-btn .food-shade { background: linear-gradient(110deg, rgba(22, 163, 74, .96) 0%, rgba(16, 185, 129, .86) 45%, rgba(13, 148, 136, .55) 100%); }
+.camera-btn::after { z-index: 1; }
+.camera-btn > span:not(.food-bg):not(.food-shade) { position: relative; z-index: 2; }
+.camera-btn .cam-icon { background: rgba(255,255,255,.24); backdrop-filter: blur(8px); }
+
+/* Rezept-Banner */
+.banner-food { position: relative; overflow: hidden; border-radius: 26px; color: #fff; margin-bottom: 16px; min-height: 150px; display: flex; align-items: flex-end; }
+.banner-food .food-shade { background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.35) 45%, rgba(0,0,0,.82) 100%); }
+.banner-food .inner { padding: 18px; width: 100%; }
+.banner-food h1 { font-size: 30px; }
+.banner-food .btn.primary { box-shadow: 0 8px 22px rgba(0,0,0,.25); }
+
+/* Onboarding mit Essen im Hintergrund */
+.onb-welcome { position: fixed; inset: 0; z-index: 0; }
+.onb-welcome .food-bg { grid-template-columns: repeat(3, 1fr); }
+.onb-welcome .food-shade { background: linear-gradient(180deg, rgba(3, 20, 13, .35) 0%, rgba(3, 20, 13, .7) 40%, rgba(3, 20, 13, .96) 75%); }
+.onb.welcome { position: relative; z-index: 1; color: #fff; }
+.onb.welcome .text-2, .onb.welcome .muted { color: rgba(255,255,255,.82); }
+.onb.welcome .card { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.16); color: #fff; backdrop-filter: blur(12px); }
+.onb.welcome .input { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22); color: #fff; }
+.onb.welcome .input::placeholder { color: rgba(255,255,255,.6); }
+.onb.welcome label { color: rgba(255,255,255,.85); }
+.onb.welcome .btn.ghost { color: #fff; }
+.onb.welcome .tagline { color: #86EFAC; }
+.onb h1 { background: none; }
+.grad-text { background: linear-gradient(90deg, #86EFAC, #FDE68A 60%, #FDBA74); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* bunte Akzente */
+.btn.primary { background: var(--grad-green); }
+.tab-fab { background: var(--grad-green); }
+.chip.green.active { background: var(--grad-green); border-color: transparent; }
+.card.hero { background: var(--grad-green); }
+.badge.warm { background: var(--grad-warm); color: #fff; }
+.section-title .ic { width: 30px; height: 30px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.recipe-card { border-radius: 22px; }
+.recipe-card .img::after { content: ""; position: absolute; inset: auto 0 0 0; height: 45%; background: linear-gradient(transparent, rgba(0,0,0,.45)); pointer-events: none; }
+.recipe-card .img .bl { z-index: 1; }
+.ingredient { background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--green) 6%, var(--card))); }
+.ingredient img { filter: drop-shadow(0 4px 6px rgba(0,0,0,.15)); }
+
+/* Grid-Kinder dürfen schmaler werden als ihr Inhalt (verhindert seitliches Scrollen auf dem Handy) */
+.grid > *, .grid-2 > *, .row > * { min-width: 0; }
+html, body { max-width: 100%; overflow-x: hidden; }

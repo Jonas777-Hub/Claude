@@ -3,8 +3,7 @@ import { Sparkles, Loader2, Save, RefreshCw } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { Sheet, NutritionTable } from '../components/ui.jsx'
-import { api } from '../api.js'
-import { useAIStatus } from './PhotoAnalysis.jsx'
+import { useAIStatus, generateRecipeAI } from '../lib/ai.js'
 import { generateLocal } from '../lib/localGenerator.js'
 import { enrich } from '../data/recipes.js'
 import { FOODS } from '../data/foods.js'
@@ -34,7 +33,8 @@ export default function RecipeGenerator({ onClose, prefill = '' }) {
     try {
       let raw
       if (useAI) {
-        raw = await api('/api/ai/generate-recipe', { method: 'POST', body: { ...form, meal: MEALS.find(m => m[0] === form.meal)[1], dislikes: state.dislikes } })
+        raw = await generateRecipeAI({ ...form, meal: MEALS.find(m => m[0] === form.meal)[1], dislikes: state.dislikes })
+        if (!Array.isArray(raw?.ingredients) || !Array.isArray(raw?.steps)) throw new Error('Die KI-Antwort war unvollständig – bitte erneut versuchen.')
         raw.meal = raw.meal || form.meal
       } else {
         raw = generateLocal({ ...form, dislikes: state.dislikes, seed: Date.now() })
@@ -43,7 +43,7 @@ export default function RecipeGenerator({ onClose, prefill = '' }) {
         id: `custom-${newId()}`, mealId: null, custom: true, name: raw.title, desc: raw.description, meals: [raw.meal || form.meal],
         cuisine: 'international', time: raw.time, difficulty: raw.difficulty, steps: raw.steps,
         ingredients: raw.ingredients.filter(i => FOODS[i.key]).map(i => [i.key, Math.round(i.grams)]), tags: [],
-        source: useAI ? 'KI (Claude)' : 'Kalora-Generator',
+        source: useAI ? 'KI-Rezept (Claude)' : 'Kalora-Generator',
       })
       setResult(r)
     } catch (e) {
@@ -90,7 +90,7 @@ export default function RecipeGenerator({ onClose, prefill = '' }) {
           <button className="btn primary block" style={{ height: 54 }} onClick={() => run()} disabled={loading}>
             {loading ? <><Loader2 className="spin" size={18} /> Rezept wird erstellt …</> : <><Sparkles size={18} /> Rezept generieren</>}
           </button>
-          {ai && !ai.enabled && <p className="tiny muted center">KI-Server nicht konfiguriert – Kalora nutzt den eingebauten Offline-Generator.</p>}
+          {ai && !ai.enabled && <p className="tiny muted center">Claude ist hier nicht verfügbar – Kalora nutzt den eingebauten Offline-Generator.</p>}
         </div>
       )}
 

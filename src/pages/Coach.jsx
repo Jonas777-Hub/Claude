@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Send, Sparkles, Trash2 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
-import { api } from '../api.js'
-import { useAIStatus } from './PhotoAnalysis.jsx'
+import { useAIStatus, askCoach } from '../lib/ai.js'
 import { RECIPES } from '../data/recipes.js'
 import { FOODS } from '../data/foods.js'
 import { GOALS, fmt, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
@@ -17,6 +16,7 @@ export default function Coach() {
   const ai = useAIStatus()
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
+  const [live, setLive] = useState('')
   const end = useRef(null)
   const history = state.coachHistory || []
   const consumed = sumEntries(state.log[todayKey()] || [])
@@ -53,13 +53,14 @@ export default function Coach() {
     setBusy(true)
     let answer
     try {
-      if (ai?.enabled) answer = (await api('/api/ai/coach', { method: 'POST', body: { question: text, history: history.slice(-10), context: context() } })).answer
+      if (ai?.enabled) answer = await askCoach({ question: text, history, context: context(), onText: t => setLive(t) })
       else answer = localCoach(text, { state, targets, consumed, rem, prefs })
     } catch (e) {
-      answer = `${localCoach(text, { state, targets, consumed, rem, prefs })}\n\n(Hinweis: KI-Server nicht erreichbar – ${e.message})`
+      answer = `${localCoach(text, { state, targets, consumed, rem, prefs })}\n\n(Hinweis: Claude war nicht erreichbar – ${e.message})`
     }
     update(s => ({ ...s, coachHistory: [...next, { role: 'assistant', text: answer, ts: Date.now() }].slice(-40) }))
     setBusy(false)
+    setLive('')
   }
 
   // Rezeptnamen in Antworten antippbar machen
@@ -81,7 +82,7 @@ export default function Coach() {
   return (
     <div className="page" style={{ maxWidth: 760 }}>
       <header className="topbar">
-        <div><div className="sub">{ai?.enabled ? 'Powered by Claude' : 'Offline-Coach'}</div><h1>KI-Ernährungsberater</h1></div>
+        <div><div className="sub">{ai?.enabled ? 'Mit Claude' : 'Offline-Coach'}</div><h1>KI-Ernährungsberater</h1></div>
         {history.length > 0 && <button className="icon-btn" onClick={() => update(s => ({ ...s, coachHistory: [] }))} aria-label="Verlauf löschen"><Trash2 size={18} /></button>}
       </header>
       <div className="card tinted small">Heute noch offen: <b>{fmt(rem.kcal)} kcal</b> · <b>{fmt(rem.p)} g Protein</b> · <b>{fmt(rem.f)} g Fett</b> · <b>{fmt(rem.s)} g Zucker</b></div>
@@ -91,7 +92,7 @@ export default function Coach() {
           <div className="bubble ai">Hi{state.profile.name ? ` ${state.profile.name}` : ''}! 👋 Ich bin dein Kalora Coach. Ich kenne deine Ziele, was du heute gegessen hast und welche Rezepte dir schmecken. Frag mich alles rund um Ernährung!</div>
         )}
         {history.map((m, i) => <div key={i} className={`bubble ${m.role === 'user' ? 'me' : 'ai'}`}>{m.role === 'user' ? m.text : renderText(m.text)}</div>)}
-        {busy && <div className="bubble ai typing"><span /><span /><span /></div>}
+        {busy && (live ? <div className="bubble ai">{live}</div> : <div className="bubble ai typing"><span /><span /><span /></div>)}
         <div ref={end} />
       </div>
 

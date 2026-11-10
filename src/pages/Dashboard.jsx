@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react'
 import { Camera, Search, TrendingUp, MessageCircle, RefreshCw, Droplets, Plus, Minus, Sparkles, CheckCircle2 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
-import { Ring, NutrientRing, RecipeImage, MacroLine } from '../components/ui.jsx'
+import { Ring, NutrientRing, RecipeImage, MacroLine, FoodBackdrop, TINT } from '../components/ui.jsx'
 import { NUTRIENTS, fmt, nutrientStatus, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
 import { learnPreferences, todayPlan } from '../lib/recommend.js'
 
-export function SyncDot() {
+export function SyncDot({ light }) {
   const { sync, online, user } = useStore()
   const map = { synced: ['var(--green)', 'Synchronisiert'], pending: ['var(--orange)', 'Speichert …'], offline: ['var(--muted)', 'Offline'], error: ['var(--red)', 'Sync-Fehler'], local: ['var(--muted)', 'Nur lokal'] }
   const [c, l] = !online ? map.offline : map[user ? sync.status : 'local'] || map.local
-  return <span className="row tiny muted" style={{ gap: 5 }} title={l}><span className="sync-dot" style={{ background: c }} />{l}</span>
+  return <span className={`row tiny ${light ? '' : 'muted'}`} style={{ gap: 5, opacity: light ? .85 : 1 }} title={l}><span className="sync-dot" style={{ background: c }} />{l}</span>
 }
 
 export default function Dashboard() {
@@ -37,37 +37,42 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <div>
-          <div className="sub">{dateStr}</div>
-          <h1>{greet}{name ? `, ${name}` : ''} 👋</h1>
-          <SyncDot />
-        </div>
-        <div className="row" style={{ gap: 8 }}>
-          <button className="icon-btn" onClick={() => go('verlauf')} aria-label="Verlauf"><TrendingUp size={19} /></button>
-          <button className="icon-btn" onClick={() => go('coach')} aria-label="KI-Coach"><MessageCircle size={19} /></button>
-          <button className="avatar" onClick={() => go('profil')} aria-label="Profil">{(name || 'K')[0].toUpperCase()}</button>
-        </div>
-      </header>
-
-      <div className="grid-2">
-        {/* Kalorien */}
-        <section className="card">
-          <div className="kcal-card">
-            <Ring value={consumed.kcal} max={targets.kcal} size={150} stroke={15} color={kcalSt.color}>
-              <div className="kcal-big" style={{ fontSize: 30, color: kcalSt.state === 'über' ? 'var(--red)' : undefined }}>{fmt(Math.abs(targets.kcal - consumed.kcal))}</div>
-              <div className="small muted bold">{consumed.kcal > targets.kcal ? 'kcal zu viel' : 'kcal offen'}</div>
-            </Ring>
-            <div className="col" style={{ gap: 12 }}>
-              <div className="kcal-stats" style={{ gridTemplateColumns: '1fr' }}>
-                <div><div className="l">Verbraucht</div><div className="v">{fmt(consumed.kcal)} kcal</div></div>
-                <div><div className="l">Verfügbar</div><div className="v" style={{ color: kcalSt.color }}>{fmt(rem.kcal)} kcal</div></div>
-                <div><div className="l">Tagesziel</div><div className="v">{fmt(targets.kcal)} kcal</div></div>
-              </div>
+      <section className="hero-food">
+        <FoodBackdrop ids={['honig-balsamico-haehnchen', 'lachs-avocado-salat', 'shakshuka', 'pad-thai', 'tofu-cashew-wok', 'pancakes-beeren']} blur />
+        <span className="food-shade" />
+        <div className="inner on-photo">
+          <div className="row between" style={{ alignItems: 'flex-start' }}>
+            <div>
+              <div className="sub small bold" style={{ textTransform: 'capitalize' }}>{dateStr}</div>
+              <h1>{greet}{name ? `, ${name}` : ''} 👋</h1>
+            </div>
+            <div className="row" style={{ gap: 8 }}>
+              <button className="icon-btn" onClick={() => go('verlauf')} aria-label="Verlauf"><TrendingUp size={19} /></button>
+              <button className="icon-btn" onClick={() => go('coach')} aria-label="KI-Coach"><MessageCircle size={19} /></button>
+              <button className="avatar" onClick={() => go('profil')} aria-label="Profil">{(name || 'K')[0].toUpperCase()}</button>
             </div>
           </div>
-        </section>
+          <div className="row mt" style={{ gap: 16 }}>
+            <Ring value={consumed.kcal} max={targets.kcal} size={128} stroke={13} color={kcalSt.state === 'ok' ? '#ffffff' : kcalSt.color}>
+              <div className="kcal-big" style={{ fontSize: 28 }}>{fmt(Math.abs(targets.kcal - consumed.kcal))}</div>
+              <div className="tiny bold" style={{ opacity: .85 }}>{consumed.kcal > targets.kcal ? 'kcal zu viel' : 'kcal offen'}</div>
+            </Ring>
+            <div className="col" style={{ gap: 6, flex: 1, minWidth: 0 }}>
+              <div className="tiny bold" style={{ opacity: .85, textTransform: 'uppercase', letterSpacing: '.08em' }}>Kalorien heute</div>
+              <div className="kcal-big" style={{ fontSize: 34 }}>{fmt(consumed.kcal)}<span style={{ fontSize: 16, opacity: .8 }}> / {fmt(targets.kcal)}</span></div>
+              <div className="bar" style={{ background: 'rgba(255,255,255,.2)', height: 8 }}><div style={{ width: `${Math.min(100, (consumed.kcal / targets.kcal) * 100)}%`, background: kcalSt.state === 'ok' ? '#fff' : kcalSt.color }} /></div>
+              <SyncDot light />
+            </div>
+          </div>
+          <div className="hero-stats">
+            <div className="hero-stat"><div className="v">{fmt(consumed.kcal)}</div><div className="l">Verbraucht</div></div>
+            <div className="hero-stat"><div className="v">{fmt(rem.kcal)}</div><div className="l">Verfügbar</div></div>
+            <div className="hero-stat"><div className="v">{fmt(targets.kcal)}</div><div className="l">Tagesziel</div></div>
+          </div>
+        </div>
+      </section>
 
+      <div>
         {/* Heute noch verfügbar */}
         <section className="card">
           <div className="card-title">Heute noch verfügbar</div>
@@ -76,7 +81,7 @@ export default function Dashboard() {
               const st = nutrientStatus(n.key, consumed[n.key], targets[n.key])
               const over = consumed[n.key] - targets[n.key]
               return (
-                <div key={n.key} className="open-item">
+                <div key={n.key} className="open-item tint" style={{ '--tint': TINT[n.key] }}>
                   <div className="v" style={{ color: st.state === 'über' ? 'var(--red)' : undefined }}>
                     {over > 0 && n.type === 'limit' ? `+${fmt(over)}` : fmt(rem[n.key])} <span style={{ fontSize: 13 }}>{n.unit}</span>
                   </div>
@@ -92,6 +97,8 @@ export default function Dashboard() {
       {/* Kamera */}
       <div className="grid-2 mt">
         <button className="camera-btn" onClick={() => open('photo')}>
+          <FoodBackdrop ids={['haehnchen-shawarma', 'ofenlachs-fenchel', 'gefuellte-paprika-quinoa']} />
+          <span className="food-shade" />
           <span className="cam-icon"><Camera size={32} /></span>
           <span><h3>Essen fotografieren</h3><p>KI erkennt Gericht, Portion & Nährwerte</p></span>
         </button>

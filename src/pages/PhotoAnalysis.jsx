@@ -1,23 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Camera, ImagePlus, Loader2, Trash2, Plus, Sparkles, AlertTriangle, Check } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { Sheet, Stepper } from '../components/ui.jsx'
-import { api, resizeImage } from '../api.js'
+import { resizeImage } from '../api.js'
+import { useAIStatus, analyzePhoto } from '../lib/ai.js'
 import { SLOTS, fmt, slotForTime } from '../lib/nutrition.js'
 import { searchFoods, nutrientsFor } from '../data/foods.js'
 
-let aiStatusCache = null
-export async function getAIStatus() {
-  if (aiStatusCache) return aiStatusCache
-  try { aiStatusCache = await api('/api/ai/status', { auth: false }) } catch { aiStatusCache = { enabled: false, offline: true } }
-  return aiStatusCache
-}
-export function useAIStatus() {
-  const [s, setS] = useState(aiStatusCache)
-  useEffect(() => { getAIStatus().then(setS) }, [])
-  return s
-}
+export { useAIStatus }
 
 export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
   const { addEntries, notify } = useStore()
@@ -39,16 +30,17 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
   const onFile = async f => {
     if (!f) return
     try {
-      const r = await resizeImage(f, 1024)
+      const r = { ...(await resizeImage(f, 1280)), file: f }
       setImg(r)
-      if (ai?.enabled) analyze(r)
+      if (ai?.images) analyze(r)
     } catch (e) { notify(e.message, 'err') }
   }
 
   const analyze = async (image = img) => {
     setPhase('analyzing'); setError('')
     try {
-      const r = await api('/api/ai/analyze-photo', { method: 'POST', body: { image: image.base64, mediaType: image.mediaType, hint } })
+      const blob = await (await fetch(image.dataUrl)).blob()
+      const r = await analyzePhoto({ file: blob, image, hint })
       if (!r.is_food) { setError('Auf dem Foto wurde kein Essen erkannt. Versuche es mit einem anderen Bild.'); setPhase('error'); return }
       setResult(r)
       setDish(r.dish)
@@ -92,11 +84,11 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
       <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => onFile(e.target.files[0])} />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => onFile(e.target.files[0])} />
 
-      {ai && !ai.enabled && (
+      {ai && !ai.images && (
         <div className="card tinted row" style={{ alignItems: 'flex-start', marginBottom: 14 }}>
           <AlertTriangle size={20} color="var(--orange)" style={{ flexShrink: 0 }} />
           <div className="small">
-            <b>KI-Fotoerkennung ist hier nicht aktiv.</b> Sie braucht den Kalora-Server mit Claude-Schlüssel (<code>ANTHROPIC_API_KEY</code>). Trag dein Essen solange über die Lebensmittelsuche ein.
+            <b>KI-Fotoerkennung ist hier gerade nicht verfügbar.</b> Öffne Kalora in der Claude-App bzw. auf claude.ai und erlaube den Zugriff auf Claude, wenn du gefragt wirst. Solange kannst du dein Essen über die Lebensmittelsuche eintragen.
             <div className="mt-s"><button className="btn sm" onClick={() => { onClose(); open('search', { slot }) }}>Zur Lebensmittelsuche</button></div>
           </div>
         </div>
@@ -122,8 +114,8 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
         </div>
       )}
 
-      {img && phase === 'pick' && ai?.enabled && <button className="btn primary block mt" onClick={() => analyze()}><Sparkles size={18} /> Analysieren</button>}
-      {img && phase === 'pick' && ai && !ai.enabled && <button className="btn block mt" onClick={() => setImg(null)}>Anderes Foto</button>}
+      {img && phase === 'pick' && ai?.images && <button className="btn primary block mt" onClick={() => analyze()}><Sparkles size={18} /> Analysieren</button>}
+      {img && phase === 'pick' && ai && !ai.images && <button className="btn block mt" onClick={() => setImg(null)}>Anderes Foto</button>}
 
       {phase === 'analyzing' && (
         <div className="center mt-l">

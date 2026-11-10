@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Clock, Star, ZoomIn, ZoomOut, Flame, Heart } from 'lucide-react'
 import { fmt, nutrientStatus } from '../lib/nutrition.js'
-import { imageUrl } from '../data/recipes.js'
+import { imageUrl, RECIPE_MAP } from '../data/recipes.js'
+
+// Hintergrund aus echten Rezeptfotos
+export function FoodBackdrop({ ids, blur, size = 'medium' }) {
+  return (
+    <span className={`food-bg ${blur ? 'blur' : ''}`} aria-hidden="true">
+      {ids.map(id => RECIPE_MAP[id] && <img key={id} src={imageUrl(RECIPE_MAP[id], size)} alt="" />)}
+    </span>
+  )
+}
 
 export function Ring({ value = 0, max = 1, size = 120, stroke = 12, color, children, track }) {
   const r = (size - stroke) / 2
@@ -19,10 +28,12 @@ export function Ring({ value = 0, max = 1, size = 120, stroke = 12, color, child
   )
 }
 
+export const TINT = { kcal: '#22C55E', p: '#3B82F6', c: '#F59E0B', f: '#EC4899', s: '#8B5CF6', fi: '#14B8A6' }
+
 export function NutrientRing({ k, label, consumed, target, unit = 'g', size = 74 }) {
   const st = nutrientStatus(k, consumed, target)
   return (
-    <div className="mini-ring card flat">
+    <div className="mini-ring card flat tint" style={{ '--tint': TINT[k] || 'var(--green)' }}>
       <Ring value={consumed} max={target} size={size} stroke={8} color={st.color}>
         <span className="val" style={{ fontSize: 14 }}>{Math.round(st.ratio * 100)}%</span>
       </Ring>
@@ -32,14 +43,21 @@ export function NutrientRing({ k, label, consumed, target, unit = 'g', size = 74
   )
 }
 
+// Offene Fenster als Stapel: Escape schließt nur das oberste, der Hintergrund scrollt nicht mit
+const sheetStack = []
+function onStackKey(e) { if (e.key === 'Escape') sheetStack[sheetStack.length - 1]?.current?.() }
+
 export function Sheet({ title, onClose, children, full, actions, back }) {
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
-    const onKey = e => e.key === 'Escape' && onClose?.()
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
-  }, [onClose])
+    sheetStack.push(closeRef)
+    if (sheetStack.length === 1) { document.addEventListener('keydown', onStackKey); document.body.classList.add('locked') }
+    return () => {
+      sheetStack.splice(sheetStack.indexOf(closeRef), 1)
+      if (!sheetStack.length) { document.removeEventListener('keydown', onStackKey); document.body.classList.remove('locked') }
+    }
+  }, [])
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className={`sheet ${full ? 'full' : ''}`} role="dialog" aria-modal="true" aria-label={title}>

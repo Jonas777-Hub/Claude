@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search, SlidersHorizontal, Sparkles, X, EyeOff } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
-import { RecipeCard, Sheet } from '../components/ui.jsx'
+import { RecipeCard, Sheet, FoodBackdrop } from '../components/ui.jsx'
 import { RECIPES, RECIPE_CATEGORIES, recipeHasDislike } from '../data/recipes.js'
 import { FOODS } from '../data/foods.js'
 import { remaining, sumEntries, todayKey, fmt } from '../lib/nutrition.js'
@@ -112,10 +112,14 @@ export default function Recipes() {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <div><div className="sub">{all.length} Rezepte · echte Fotos</div><h1>Rezepte</h1></div>
-        <button className="btn primary sm" onClick={() => open('generator')}><Sparkles size={16} /> Eigenes Rezept</button>
-      </header>
+      <section className="banner-food">
+        <FoodBackdrop ids={['spaghetti-bolognese', 'thai-green-curry', 'teriyaki-lachs', 'ratatouille', 'aussie-burger', 'schoko-avocado-mousse']} />
+        <span className="food-shade" />
+        <div className="inner on-photo row between" style={{ alignItems: 'flex-end', gap: 12 }}>
+          <div><div className="small bold" style={{ opacity: .85 }}>{all.length} Rezepte · echte Fotos</div><h1>Rezepte</h1></div>
+          <button className="btn primary sm" onClick={() => open('generator')}><Sparkles size={16} /> Eigenes Rezept</button>
+        </div>
+      </section>
 
       <div className="search"><Search size={18} /><input className="input" placeholder="Worauf hast du Lust?" value={q} onChange={e => setQ(e.target.value)} aria-label="Rezepte suchen" />
         {q && <button className="icon-btn sm plain" style={{ position: 'absolute', right: 6, top: 9 }} onClick={() => setQ('')} aria-label="Suche leeren"><X size={16} /></button>}

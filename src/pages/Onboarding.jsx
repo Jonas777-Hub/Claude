@@ -5,6 +5,7 @@ import { useStore } from '../store.jsx'
 import { ACTIVITY_LEVELS, GOALS, SEXES, calcTargets, fmt, todayKey } from '../lib/nutrition.js'
 import { AuthForm } from './Profile.jsx'
 import { STATIC } from '../static.js'
+import { FoodBackdrop } from '../components/ui.jsx'
 
 export default function Onboarding() {
   const { update, user } = useStore()
@@ -46,7 +47,14 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="onb">
+    <>
+    {step === 0 && (
+      <div className="onb-welcome" aria-hidden="true">
+        <FoodBackdrop size="large" ids={['honig-balsamico-haehnchen', 'pancakes-beeren', 'lachs-avocado-salat', 'shakshuka', 'thai-green-curry', 'tofu-cashew-wok', 'spaghetti-bolognese', 'pad-thai', 'gefuellte-paprika-quinoa', 'erdbeeren-romanoff', 'haehnchen-shawarma', 'ofenlachs-fenchel']} />
+        <span className="food-shade" />
+      </div>
+    )}
+    <div className={`onb ${step === 0 ? 'welcome' : ''}`}>
       {step > 0 && <div className="progress"><div style={{ width: `${(step / (steps - 1)) * 100}%` }} /></div>}
       {step > 0 && <button className="icon-btn" style={{ marginBottom: 14 }} onClick={() => setStep(step - 1)} aria-label="Zurück"><ChevronLeft /></button>}
 
@@ -54,7 +62,7 @@ export default function Onboarding() {
         <div className="col" style={{ flex: 1, justifyContent: 'center', gap: 18 }}>
           <div className="logo"><img src={LOGO} alt="" /> KALORA</div>
           <div className="tagline">Track. Analyse. Erfolg.</div>
-          <h1 style={{ fontSize: 38 }}>Dein smarter Ernährungs­assistent.</h1>
+          <h1 style={{ fontSize: 40 }}>Dein smarter <span className="grad-text">Ernährungs­assistent.</span></h1>
           <p className="text-2" style={{ fontSize: 17, lineHeight: 1.5 }}>Fotografiere dein Essen – die KI erkennt es und berechnet Kalorien und Makros. Dazu passende Rezepte, Einkaufslisten und ein persönlicher Coach.</p>
           <div className="grid mt" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
             {[['📸', 'KI-Foto­erkennung'], ['🍳', '70 Rezepte mit Original­fotos'], ['🛒', 'Geteilte Einkaufs­listen']].map(([e, t]) => (
@@ -156,6 +164,7 @@ export default function Onboarding() {
         </button>
       )}
     </div>
+    </>
   )
 }
 
