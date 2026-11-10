@@ -1,7 +1,8 @@
 import {
   DEFAULT_PARAMS, FULL_CROP, normalizeParams, normalizeBox, loadImageFromFile,
-  scaledCanvas, canvasToDataUrl, renderImage, analyze,
+  scaledCanvas, renderImage, analyze,
 } from "./editor.js";
+import { connectAI, editPrompt, suggestPrompt } from "./ai.js";
 import { localSuggestions, pickFive, parseInstruction, STYLE_LABELS } from "./presets.js";
 import * as prefs from "./prefs.js";
 
@@ -39,7 +40,9 @@ const els = {
 };
 
 const state = {
-  claude: false,
+  ai: null,      // Verbindung zu Claude (oder null = lokaler Modus)
+  aiTask: null,  // AbortController der laufenden Claude-Anfrage
+  downloads: null,
   server: false, // false = läuft ohne eigenen Server (z. B. als geteilter Link)
   file: null,
   imageId: null,
@@ -62,17 +65,6 @@ function toast(message, { error = false, ms = 4500 } = {}) {
 }
 
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-
-async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Fehler ${res.status}`);
-  return data;
-}
 
 const selected = () => state.suggestions.find((s) => s.id === state.selectedId) || state.suggestions[0];
 
@@ -125,12 +117,13 @@ async function handleFile(file, { sample = false } = {}) {
     els.originalView.replaceChildren(state.preview);
     els.originalMeta.textContent = `${sample ? "Beispielbild · " : ""}${img.naturalWidth} × ${img.naturalHeight} px`;
     els.input.disabled = false;
-    els.input.placeholder = "Was soll ich ändern? z. B. „Gefällt mir, aber schneid den Mann im Hintergrund raus und mach es wärmer“";
+    updateModeChip();
     els.quick.hidden = false;
 
     if (!sample) prefs.countImage();
     renderStats();
-    await makeSuggestions();
+    setBusy(false);
+    await makeSuggestions({ askClaude: !sample });
   } catch (error) {
     toast(error.message, { error: true });
   } finally {
@@ -138,52 +131,73 @@ async function handleFile(file, { sample = false } = {}) {
   }
 }
 
-async function makeSuggestions() {
-  showSkeletons();
-  let list = null;
-  let source = "lokal";
-  if (state.claude) {
-    els.suggestMeta.textContent = "Claude schaut sich dein Bild an …";
-    try {
-      const data = await postJson("api/suggest", {
-        image: canvasToDataUrl(state.preview),
-        preferences: prefs.summary(),
-      });
-      if (Array.isArray(data.suggestions) && data.suggestions.length) {
-        list = data.suggestions.slice(0, 5);
-        source = "Claude";
-      }
-    } catch (error) {
-      toast(`Claude nicht erreichbar (${error.message}) – ich nutze die lokalen Vorschläge.`, { error: true });
-    }
-  }
-  if (!list) {
-    list = pickFive(localSuggestions(analyze(state.preview)), prefs.styleScores());
-  }
-
-  const ranked = prefs.rank(
-    list.map((s, i) => ({
+function toSuggestions(list) {
+  return prefs.rank(
+    list.slice(0, 5).map((sug, i) => ({
       id: `${state.imageId}-${i}`,
-      name: s.name,
-      description: s.description,
-      style: STYLE_LABELS[s.style] ? s.style : "natural",
-      params: normalizeParams(s.params),
+      name: String(sug.name || `Vorschlag ${i + 1}`),
+      description: String(sug.description || ""),
+      style: STYLE_LABELS[sug.style] ? sug.style : "natural",
+      params: normalizeParams(sug.params),
       removals: [],
       history: [],
+      instructions: [],
       edited: false,
     })),
   );
-  state.suggestions = ranked;
-  state.selectedId = ranked[0].id;
-  const favCount = ranked.filter((s) => s.favorite).length;
+}
+
+async function showSuggestions(list, source) {
+  state.suggestions = toSuggestions(list);
+  state.selectedId = state.suggestions[0].id;
+  const favCount = state.suggestions.filter((x) => x.favorite).length;
   els.suggestMeta.textContent = `5 Vorschläge · ${source}${favCount ? " · nach deinem Geschmack sortiert" : ""}`;
   renderGrid();
   updateTargetHint();
-
   // Nacheinander rendern, damit die Seite flüssig bleibt.
-  for (const s of state.suggestions) {
+  for (const sug of state.suggestions) {
     await nextFrame();
-    renderCardImage(s);
+    renderCardImage(sug);
+  }
+}
+
+async function makeSuggestions({ askClaude }) {
+  showSkeletons();
+  const imageId = state.imageId;
+  await showSuggestions(pickFive(localSuggestions(analyze(state.preview)), prefs.styleScores()), "sofort berechnet");
+  if (!askClaude || !state.ai) return;
+
+  // Claude schaut sich das Bild an und macht eigene Vorschläge.
+  els.suggestMeta.textContent = "Claude schaut sich dein Bild an … (dauert meist 20–60 s)";
+  els.suggestMeta.classList.add("working");
+  try {
+    const data = await state.ai.ask(suggestPrompt(prefs.summary()), [state.preview]);
+    if (state.imageId !== imageId) return; // inzwischen anderes Bild
+    const list = Array.isArray(data?.suggestions) ? data.suggestions.filter((x) => x && x.params) : [];
+    if (list.length < 3) throw new Error("Claude hat keine brauchbaren Vorschläge geliefert.");
+    if (state.suggestions.some((x) => x.edited)) {
+      toast("Claude hat neue Vorschläge – du bearbeitest aber schon. Ich lasse deine Bearbeitung stehen.");
+      els.suggestMeta.textContent = "5 Vorschläge · sofort berechnet";
+      return;
+    }
+    await showSuggestions(list, "von Claude");
+    toast("Claude hat sich dein Bild angesehen und 5 eigene Vorschläge gemacht.");
+  } catch (error) {
+    if (state.imageId !== imageId) return;
+    handleAIError(error);
+    els.suggestMeta.textContent = "5 Vorschläge · sofort berechnet";
+  } finally {
+    els.suggestMeta.classList.remove("working");
+  }
+}
+
+function handleAIError(error) {
+  if (error?.permanent) {
+    state.ai = null;
+    updateModeChip();
+    toast(`${error.message} Ich arbeite ab jetzt lokal weiter.`, { error: true, ms: 7000 });
+  } else if (error?.message !== "Abgebrochen.") {
+    toast(error?.message || "Claude ist gerade nicht erreichbar.", { error: true, ms: 6000 });
   }
 }
 
@@ -311,10 +325,13 @@ function updateTargetHint() {
   els.undoBtn.disabled = !s.history.length || state.busy;
 }
 
-function setBusy(busy) {
+function setBusy(busy, { claude = false } = {}) {
   state.busy = busy;
-  els.promptBtn.disabled = busy || !state.preview;
-  els.promptBtn.classList.toggle("busy", busy && !!state.preview);
+  // Während Claude arbeitet, wird der Knopf zum Stopp-Knopf.
+  els.promptBtn.disabled = !state.preview || (busy && !claude);
+  els.promptBtn.textContent = busy && claude ? "Stopp" : "Anwenden";
+  els.promptBtn.classList.toggle("stop", busy && claude);
+  els.input.disabled = !state.preview || busy;
   els.newBtn.disabled = busy;
   const s = selected();
   els.undoBtn.disabled = busy || !s || !s.history.length;
@@ -325,53 +342,68 @@ function setBusy(busy) {
 async function applyInstruction(text) {
   const s = selected();
   if (!s || !text.trim() || state.busy) return;
-  setBusy(true);
-  try {
-    let result = null;
-    if (state.claude) {
-      try {
-        const data = await postJson("api/edit", {
-          image: canvasToDataUrl(state.preview),
-          params: s.params,
-          removals: s.removals,
-          instruction: text,
-        });
-        result = {
-          params: normalizeParams(data.params),
-          removals: (data.removals || []).map((b) => normalizeBox(b)),
-          message: data.message || "Erledigt.",
-        };
-      } catch (error) {
-        toast(`Claude nicht erreichbar (${error.message}) – ich versuche es lokal.`, { error: true });
-      }
-    }
+  let result = null;
 
-    if (!result) {
-      const local = parseInstruction(text, s.params);
-      if (local.wantsRemoval) {
-        if (local.understood) commit(s, local.params, [], text);
-        toast("Zum Entfernen: Zieh in der Großansicht einen Rahmen um das Objekt.", { ms: 6000 });
-        openViewer(selected(), { removeMode: true });
-        return;
+  if (state.ai) {
+    const ctl = new AbortController();
+    state.aiTask = ctl;
+    setBusy(true, { claude: true });
+    els.targetHint.textContent = `Claude bearbeitet „${s.name}“: ${text}`;
+    els.targetHint.classList.add("working");
+    try {
+      const current = s.canvas || renderImage(state.preview, s.params, s.removals);
+      const data = await state.ai.ask(
+        editPrompt({ params: s.params, removals: s.removals, instruction: text, history: s.instructions }),
+        [state.preview, current],
+        ctl.signal,
+      );
+      if (!data || typeof data.params !== "object") throw new Error("Claude hat keine Parameter geliefert. Bitte noch einmal versuchen.");
+      result = {
+        params: normalizeParams(data.params),
+        removals: (Array.isArray(data.removals) ? data.removals : []).map((b) => normalizeBox(b, 0.005)),
+        message: String(data.message || "Erledigt."),
+      };
+    } catch (error) {
+      if (ctl.signal.aborted) {
+        toast("Abgebrochen.");
+      } else {
+        handleAIError(error);
       }
-      if (!local.understood) {
-        toast("Das habe ich nicht verstanden. Probier z. B. „heller“, „schärfer“, „wärmer“, „schwarz-weiß“, „zoom rein“ oder „kräftigere Farben“.", { error: true, ms: 7000 });
-        return;
-      }
-      result = { params: local.params, removals: [], message: local.message };
+      if (state.ai || ctl.signal.aborted) return; // Wunsch bleibt im Feld stehen
+    } finally {
+      state.aiTask = null;
+      els.targetHint.classList.remove("working");
+      setBusy(false);
+      updateTargetHint();
     }
-
-    commit(s, result.params, result.removals, text);
-    toast(result.message);
-    els.input.value = "";
-  } finally {
-    setBusy(false);
-    updateTargetHint();
   }
+
+  if (!result) {
+    const local = parseInstruction(text, s.params);
+    if (local.wantsRemoval) {
+      if (local.understood) commit(s, local.params, [], text);
+      toast("Zum Entfernen: Zieh in der Großansicht einen Rahmen um das Objekt.", { ms: 6000 });
+      openViewer(selected(), { removeMode: true });
+      return;
+    }
+    if (!local.understood) {
+      toast("Das habe ich nicht verstanden. Ohne Claude verstehe ich Stichwörter wie „heller“, „schärfer“, „wärmer“, „schwarz-weiß“, „zoom rein“, „Hintergrund unscharf“ oder „kräftigere Farben“.", { error: true, ms: 8000 });
+      return;
+    }
+    result = { params: local.params, removals: [], message: local.message };
+  }
+
+  commit(s, result.params, result.removals, text);
+  toast(result.message, { ms: 7000 });
+  els.input.value = "";
 }
 
 function commit(s, params, newRemovals, label) {
-  s.history.push({ params: s.params, removals: s.removals, name: s.name, edited: s.edited });
+  s.history.push({
+    params: s.params, removals: s.removals, name: s.name, edited: s.edited,
+    description: s.description, instructions: s.instructions,
+  });
+  if (label) s.instructions = [...s.instructions, label];
   s.params = params;
   s.removals = [...s.removals, ...newRemovals];
   s.edited = true;
@@ -404,7 +436,7 @@ function openViewer(s, { removeMode = false } = {}) {
   select(s.id);
   els.viewerTitle.textContent = s.name;
   const after = s.canvas || renderImage(state.preview, s.params, s.removals);
-  const before = renderImage(state.preview, { ...DEFAULT_PARAMS, crop: s.params.crop }, []);
+  const before = renderImage(state.preview, { ...DEFAULT_PARAMS, crop: s.params.crop, rotate: s.params.rotate, flipH: s.params.flipH, flipV: s.params.flipV }, []);
   els.compareAfter.replaceChildren(after);
   els.compareBefore.replaceChildren(before);
   setCompare(50);
@@ -483,15 +515,25 @@ async function download(s) {
   await nextFrame();
   const full = scaledCanvas(state.original, EXPORT_SIZE);
   const out = renderImage(full, s.params, s.removals);
-  out.toBlob((blob) => {
-    if (!state.server) return showSaveDialog(blob, s.name);
-    const a = document.createElement("a");
-    const baseName = (state.file?.name || "bild").replace(/\.[^.]+$/, "");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${baseName}-${s.name.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-")}.jpg`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  }, "image/jpeg", 0.92);
+  const blob = await new Promise((resolve) => out.toBlob(resolve, "image/jpeg", 0.92));
+  const baseName = (state.file?.name || "bild").replace(/\.[^.]+$/, "");
+  const filename = `${baseName}-${s.name.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-")}.jpg`;
+  if (state.downloads) {
+    try {
+      await state.downloads.save({ filename, data: blob });
+      toast("Gespeichert.");
+    } catch (e) {
+      if (e?.code === "declined") return;
+      showSaveDialog(blob, s.name);
+    }
+    return;
+  }
+  if (!state.server) return showSaveDialog(blob, s.name);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 function showSaveDialog(blob, name) {
@@ -538,7 +580,11 @@ els.fileInput.addEventListener("change", () => {
 els.newBtn.addEventListener("click", () => els.fileInput.click());
 els.form.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (state.aiTask) return state.aiTask.abort();
   applyInstruction(els.input.value);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && state.aiTask) state.aiTask.abort();
 });
 els.undoBtn.addEventListener("click", undo);
 els.quick.addEventListener("click", (e) => {
@@ -582,21 +628,39 @@ document.addEventListener("paste", (e) => {
 
 // ---------- Start ----------
 
+function updateModeChip(text) {
+  const on = Boolean(state.ai);
+  els.modeChip.textContent = text || (on ? "● Claude aktiv" : "● Lokaler Modus");
+  els.modeChip.classList.toggle("on", on);
+  els.modeChip.title = on
+    ? "Claude schaut sich deine Bilder an und setzt deine Wünsche aus der Textzeile um."
+    : "Ohne Claude: Vorschläge und Stichwörter werden lokal berechnet.";
+  els.input.placeholder = !state.preview
+    ? "Lade zuerst ein Bild hoch …"
+    : on
+      ? "Schreib genau, was ich machen soll – z. B. „Himmel dramatischer, Gesicht heller, Hintergrund unscharf und den Mann links rausschneiden“"
+      : "Was soll ich ändern? z. B. „viel heller, wärmer und zoom rein“";
+}
+
 (async function init() {
   renderStats();
+  updateModeChip("● Verbinde …");
+  let server = null;
   try {
     const res = await fetch("api/status");
-    const data = await res.json();
+    server = await res.json();
     state.server = true;
-    state.claude = Boolean(data.claude);
   } catch {
     state.server = false;
-    state.claude = false;
   }
-  els.modeChip.textContent = state.claude ? "● Claude aktiv" : "● Lokaler Modus";
-  els.modeChip.classList.toggle("on", state.claude);
-  els.modeChip.title = state.claude
-    ? "Claude analysiert deine Bilder und versteht freie Wünsche."
-    : "Ohne API-Schlüssel: Vorschläge und Wünsche werden lokal berechnet.";
-  if (!state.preview) handleFile(await sampleFile(), { sample: true });
+  // Beispielbild sofort zeigen, Claude im Hintergrund verbinden.
+  const ready = handleFile(await sampleFile(), { sample: true });
+  const [ai, downloads] = await Promise.all([
+    connectAI({ server }),
+    typeof window.claude?.use === "function" ? window.claude.use("downloads").catch(() => null) : null,
+  ]);
+  state.ai = ai;
+  state.downloads = downloads;
+  await ready;
+  updateModeChip();
 })();

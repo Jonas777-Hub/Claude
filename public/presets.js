@@ -17,82 +17,100 @@ export const STYLE_LABELS = {
 
 const round = (v, d = 0) => Math.round(v * 10 ** d) / 10 ** d;
 
-/** Grundkorrektur passend zum Bild: Belichtung, Kontrast, Farbstich. */
+/** Grundkorrektur passend zum Bild: Tonwerte spreizen, Belichtung, Farbstich. */
 function baseCorrection(s) {
-  const exposure = round(Math.max(-0.8, Math.min(1.2, Math.log2(0.48 / Math.max(0.05, s.brightness)) * 0.6)), 2);
-  const contrast = round(Math.max(-20, Math.min(30, (0.22 - s.contrast) * 120)));
-  const temperature = round(Math.max(-25, Math.min(25, -s.warmth * 120)));
-  const tint = round(Math.max(-20, Math.min(20, s.greenMagenta * 150)));
-  const highlights = s.clippedHighlights > 0.02 ? -35 : -10;
-  const shadows = s.clippedShadows > 0.05 ? 35 : 10;
-  return { exposure, contrast, temperature, tint, highlights, shadows };
+  // Schwarz- und Weißpunkt so setzen, dass das Bild den vollen Tonumfang nutzt.
+  const blackPoint = round(Math.min(60, Math.max(0, (s.low - 0.01) / 0.4 * 100)));
+  const whitePoint = round(Math.min(60, Math.max(0, (0.99 - s.high) / 0.4 * 100)));
+  const stretched = (s.brightness - s.low) / Math.max(0.1, s.high - s.low);
+  const exposure = round(Math.max(-1, Math.min(1.4, Math.log2(0.5 / Math.max(0.05, stretched)) * 0.8)), 2);
+  const contrast = round(Math.max(-15, Math.min(35, (0.24 - s.contrast) * 140 + 8)));
+  const temperature = round(Math.max(-35, Math.min(35, -s.warmth * 150)));
+  const tint = round(Math.max(-25, Math.min(25, s.greenMagenta * 180)));
+  return { blackPoint, whitePoint, exposure, contrast, temperature, tint, highlights: -30, shadows: 30 };
 }
 
 export function localSuggestions(stats) {
   const base = baseCorrection(stats);
   const p = (extra) => normalizeParams({ ...DEFAULT_PARAMS, ...base, ...extra, crop: FULL_CROP });
   const lowSat = stats.saturation < 0.18;
+  const c = base.contrast;
 
   return [
     {
       name: "Natürlich optimiert",
-      description: "Belichtung und Farbstich ausgeglichen, Schatten leicht aufgehellt.",
+      description: "Tonwerte gespreizt, Belichtung und Farbstich korrigiert, Dunst entfernt.",
       style: "natural",
-      params: p({ vibrance: lowSat ? 20 : 8, sharpen: 15, clarity: 8 }),
+      params: p({ vibrance: lowSat ? 35 : 20, dehaze: 15, clarity: 15, sharpen: 25 }),
     },
     {
       name: "Knackig scharf",
-      description: "Deutlich mehr Schärfe und Klarheit, etwas mehr Kontrast.",
+      description: "Viel Schärfe und Klarheit, mehr Kontrast und klare Konturen.",
       style: "crisp",
-      params: p({ sharpen: 70, clarity: 40, contrast: base.contrast + 10, vibrance: 10 }),
+      params: p({ sharpen: 85, clarity: 60, dehaze: 25, contrast: c + 15, vibrance: 20, blacks: -15 }),
     },
     {
       name: "Schwarz-Weiß",
-      description: "Klassisches Schwarz-Weiß mit kräftigem Kontrast.",
+      description: "Kräftiges Schwarz-Weiß mit tiefen Schwarztönen und Vignette.",
       style: "bw",
-      params: p({ grayscale: 100, contrast: base.contrast + 22, clarity: 20, sharpen: 25, vignette: 20, temperature: 0, tint: 0 }),
+      params: p({ grayscale: 100, contrast: c + 35, clarity: 35, sharpen: 30, blacks: -25, whites: 15, vignette: 30, temperature: 0, tint: 0 }),
     },
     {
       name: "Goldene Stunde",
-      description: "Wärmere Farben und ein sanftes, sonniges Licht.",
+      description: "Warmes, sonniges Licht, goldene Lichter und weiche Schatten.",
       style: "warm",
-      params: p({ temperature: base.temperature + 30, vibrance: 18, exposure: base.exposure + 0.1, highlights: -20, vignette: 12 }),
+      params: p({
+        temperature: base.temperature + 45, vibrance: 30, exposure: base.exposure + 0.15, highlights: -40,
+        splitHighlightHue: 40, splitHighlightAmount: 45, splitShadowHue: 20, splitShadowAmount: 20, vignette: 20,
+      }),
     },
     {
       name: "Kühl & klar",
-      description: "Kühlere Farbtemperatur, frischer und klarer Look.",
+      description: "Kühle Farben, frischer Look und klare Details.",
       style: "cool",
-      params: p({ temperature: base.temperature - 28, contrast: base.contrast + 8, clarity: 20, sharpen: 20 }),
+      params: p({
+        temperature: base.temperature - 40, contrast: c + 12, clarity: 30, sharpen: 30, dehaze: 20,
+        splitShadowHue: 210, splitShadowAmount: 35,
+      }),
     },
     {
       name: "Lebendige Farben",
-      description: "Mehr Farbkraft, ohne Hauttöne zu übertreiben.",
+      description: "Deutlich mehr Farbkraft, blauerer Himmel und sattes Grün.",
       style: "vivid",
-      params: p({ vibrance: 45, saturation: 12, contrast: base.contrast + 8, sharpen: 15 }),
+      params: p({
+        vibrance: 60, saturation: 20, contrast: c + 12, dehaze: 20, sharpen: 25,
+        hsl: { blue: { h: 0, s: 35, l: -15 }, aqua: { h: 0, s: 30, l: -10 }, green: { h: 0, s: 30, l: 0 }, orange: { h: 0, s: 10, l: 5 } },
+      }),
     },
     {
       name: "Moody",
-      description: "Dunkler, satte Schatten und gedämpfte Farben.",
+      description: "Dunkle, satte Stimmung mit gedämpften Farben und Vignette.",
       style: "moody",
-      params: p({ exposure: base.exposure - 0.3, contrast: base.contrast + 15, saturation: -20, shadows: -10, vignette: 35, fade: 10 }),
+      params: p({
+        exposure: base.exposure - 0.45, contrast: c + 25, saturation: -30, shadows: -5, blacks: -20, vignette: 50,
+        fade: 15, splitShadowHue: 200, splitShadowAmount: 40,
+      }),
     },
     {
       name: "Hell & luftig",
-      description: "Heller, weicher Kontrast, zarte Farben.",
+      description: "Deutlich heller, weiche Kontraste und zarte Farben.",
       style: "bright",
-      params: p({ exposure: base.exposure + 0.45, contrast: base.contrast - 15, shadows: 40, saturation: -10, vibrance: 10 }),
+      params: p({ exposure: base.exposure + 0.7, contrast: c - 25, shadows: 55, highlights: -20, saturation: -15, vibrance: 15, whites: 15 }),
     },
     {
       name: "Vintage",
-      description: "Leichter Sepia-Ton, matte Schwarztöne und Vignette.",
+      description: "Sepia-Ton, matte Schwarztöne, Körnung und Vignette.",
       style: "vintage",
-      params: p({ sepia: 35, fade: 35, contrast: base.contrast - 5, saturation: -15, vignette: 30 }),
+      params: p({ sepia: 45, fade: 45, contrast: c - 10, saturation: -25, vignette: 40, grain: 35, splitHighlightHue: 45, splitHighlightAmount: 30 }),
     },
     {
       name: "Kino-Look",
-      description: "Mehr Kontrast, warme Lichter und kühle Schatten wie im Film.",
+      description: "Teal & Orange wie im Film: kühle Schatten, warme Lichter, viel Kontrast.",
       style: "cinematic",
-      params: p({ contrast: base.contrast + 18, temperature: base.temperature + 10, tint: -8, saturation: -10, fade: 12, vignette: 25, clarity: 15 }),
+      params: p({
+        contrast: c + 28, saturation: -10, fade: 12, vignette: 35, clarity: 20,
+        splitShadowHue: 190, splitShadowAmount: 60, splitHighlightHue: 32, splitHighlightAmount: 50,
+      }),
     },
   ];
 }
@@ -135,6 +153,14 @@ const RULES = [
   { re: /(schatten aufhellen|tiefen aufhellen)/, apply: (p, k) => (p.shadows += 30 * k), msg: "Schatten aufgehellt" },
   { re: /(himmel|lichter retten|überbelichtet)/, apply: (p, k) => (p.highlights -= 30 * k), msg: "Lichter zurückgeholt" },
   { re: /(matt|fade|verblasst)/, apply: (p, k) => (p.fade += 25 * k), msg: "matter Look" },
+  { re: /(hintergrund (unscharf|verschwommen|weich)|bokeh|freistellen)/, apply: (p, k) => { p.regions = [...(p.regions || []), { x: 0.25, y: 0.15, w: 0.5, h: 0.75, shape: "ellipse", feather: 60, invert: true, blur: Math.min(100, 60 * k) }]; }, msg: "Hintergrund weichgezeichnet" },
+  { re: /(spiegeln|spiegel|horizontal drehen)/, apply: (p) => (p.flipH = !p.flipH), msg: "gespiegelt" },
+  { re: /(gerade ?richten|nach rechts drehen|im uhrzeigersinn)/, apply: (p, k) => (p.rotate += 3 * k), msg: "gedreht" },
+  { re: /(nach links drehen|gegen den uhrzeigersinn)/, apply: (p, k) => (p.rotate -= 3 * k), msg: "gedreht" },
+  { re: /(körnung|körnig|grain|filmkorn)/, apply: (p, k) => (p.grain += 30 * k), msg: "Körnung" },
+  { re: /(himmel blauer|blauer himmel|blauer)/, apply: (p, k) => { p.hsl = { ...p.hsl, blue: { h: 0, s: (p.hsl?.blue?.s || 0) + 30 * k, l: (p.hsl?.blue?.l || 0) - 10 * k } }; }, msg: "Blau kräftiger" },
+  { re: /(grüner|sattes grün)/, apply: (p, k) => { p.hsl = { ...p.hsl, green: { h: 0, s: (p.hsl?.green?.s || 0) + 30 * k, l: 0 } }; }, msg: "Grün kräftiger" },
+  { re: /(dunst|klarer|dehaze)/, apply: (p, k) => (p.dehaze += 25 * k), msg: "Dunst entfernt" },
 ];
 
 function zoomCrop(crop, factor, dir) {
@@ -155,7 +181,7 @@ function zoomCrop(crop, factor, dir) {
  */
 export function parseInstruction(text, current) {
   const t = text.toLowerCase();
-  const p = { ...current, crop: { ...current.crop } };
+  const p = structuredClone(current);
   const done = [];
   const k = /(viel|deutlich|stark|sehr)/.test(t) ? 1.8 : /(bisschen|etwas|leicht|wenig)/.test(t) ? 0.5 : 1;
 
