@@ -224,11 +224,11 @@ export function OrderSheet({ onClose }) {
       ) : (
         <div className="col mt" style={{ gap: 10 }}>
           {partners.map(p => (
-            <button key={p.name} className="store" onClick={async () => { await navigator.clipboard?.writeText(text); notify('Einkaufsliste kopiert – im Shop einfügen'); window.open(p.url, '_blank', 'noopener') }}>
+            <a key={p.name} className="store" href={p.url} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }} onClick={() => { navigator.clipboard?.writeText(text).then(() => notify('Einkaufsliste kopiert – im Shop einfügen')).catch(() => {}) }}>
               <div className="store-logo" style={{ background: p.color }}>{p.name[0]}</div>
               <span className="bold" style={{ flex: 1, textAlign: 'left' }}>{p.name}</span>
               <ExternalLink size={16} />
-            </button>
+            </a>
           ))}
           <p className="tiny muted">Die Partner bieten derzeit keine öffentliche Warenkorb-Schnittstelle. Kalora kopiert deshalb deine Liste und öffnet den Shop – eine direkte Übergabe wird freigeschaltet, sobald eine Partner-API verfügbar ist.</p>
         </div>

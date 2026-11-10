@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { Home, BookOpen, ChefHat, ShoppingCart, TrendingUp, User, Camera, MessageCircle } from 'lucide-react'
 import { useStore } from './store.jsx'
+import { LOGO } from './logo.js'
 import { Toast } from './components/ui.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -37,8 +38,10 @@ export default function App() {
   // Theme
   useEffect(() => {
     const t = state.settings.theme
-    if (t === 'system') document.documentElement.removeAttribute('data-theme')
-    else document.documentElement.setAttribute('data-theme', t)
+    const root = document.documentElement
+    // Nur ein selbst gesetztes Theme wieder entfernen (der Host kann data-theme ebenfalls setzen)
+    if (t === 'system') { if (root.dataset.kaloraTheme) { root.removeAttribute('data-theme'); delete root.dataset.kaloraTheme } }
+    else { root.setAttribute('data-theme', t); root.dataset.kaloraTheme = '1' }
   }, [state.settings.theme])
 
   // Geteilten Einkaufswagen über Link öffnen: /cart/ABCD1234
@@ -75,7 +78,7 @@ export default function App() {
     <UICtx.Provider value={ui}>
       <div className="app">
         <nav className="sidebar" aria-label="Hauptmenü">
-          <div className="logo" style={{ padding: '4px 10px 22px' }}><img src="/icon.svg" alt="" /> KALORA</div>
+          <div className="logo" style={{ padding: '4px 10px 22px' }}><img src={LOGO} alt="" /> KALORA</div>
           {TABS.map(t => (
             <button key={t.id} className={`side-link ${tab === t.id ? 'active' : ''}`} onClick={() => go(t.id)}>
               <t.icon size={20} /> {t.label}

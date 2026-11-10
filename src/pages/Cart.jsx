@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Share2, Plus, ScanLine, Trash2, Store, Package, History, UserPlus, Users, Wifi, WifiOff, Star, Repeat, Truck, ScanSearch, X } from 'lucide-react'
 import { useStore } from '../store.jsx'
-import { Sheet, Empty, Segmented } from '../components/ui.jsx'
+import { Sheet, Empty, Segmented, ConfirmButton } from '../components/ui.jsx'
 import { BarcodeScanner, lookupBarcode } from '../components/Scanner.jsx'
 import { CATEGORIES, FOODS, FOOD_LIST, foodMatchesDislike } from '../data/foods.js'
 import { UNITS, cartSummary, formatAmount, groupByCategory, guessCategory, newId, substitutes, suggestProducts } from '../lib/shopping.js'
@@ -123,7 +123,7 @@ export default function Cart() {
       </div>
 
       {cart.shared && <button className="btn ghost block mt" onClick={() => { leaveCart(); notify('Geteilten Einkaufswagen verlassen') }}>Geteilten Einkaufswagen verlassen</button>}
-      {!cart.shared && cart.items.length > 0 && <button className="btn ghost block mt danger" onClick={() => { if (confirm('Einkaufswagen wirklich leeren?')) cartOp({ type: 'clearAll' }) }}>Einkaufswagen leeren</button>}
+      {!cart.shared && cart.items.length > 0 && <ConfirmButton className="btn ghost block mt danger" onConfirm={() => cartOp({ type: 'clearAll' })}>Einkaufswagen leeren</ConfirmButton>}
 
       {assignFor && (
         <Sheet title={`${assignFor.name} zuweisen`} onClose={() => setAssignFor(null)}>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { ChevronLeft, LogIn } from 'lucide-react'
+import { LOGO } from '../logo.js'
 import { useStore } from '../store.jsx'
 import { ACTIVITY_LEVELS, GOALS, SEXES, calcTargets, fmt, todayKey } from '../lib/nutrition.js'
 import { AuthForm } from './Profile.jsx'
+import { STATIC } from '../static.js'
 
 export default function Onboarding() {
   const { update, user } = useStore()
@@ -50,7 +52,7 @@ export default function Onboarding() {
 
       {step === 0 && (
         <div className="col" style={{ flex: 1, justifyContent: 'center', gap: 18 }}>
-          <div className="logo"><img src="/icon.svg" alt="" /> KALORA</div>
+          <div className="logo"><img src={LOGO} alt="" /> KALORA</div>
           <div className="tagline">Track. Analyse. Erfolg.</div>
           <h1 style={{ fontSize: 38 }}>Dein smarter Ernährungs­assistent.</h1>
           <p className="text-2" style={{ fontSize: 17, lineHeight: 1.5 }}>Fotografiere dein Essen – die KI erkennt es und berechnet Kalorien und Makros. Dazu passende Rezepte, Einkaufslisten und ein persönlicher Coach.</p>
@@ -65,7 +67,7 @@ export default function Onboarding() {
             <input id="name" className="input" placeholder="Dein Vorname" value={p.name} onChange={e => set('name', e.target.value)} />
           </div>
           <button className="btn primary block" onClick={() => setStep(1)}>Los geht's</button>
-          <button className="btn ghost block" onClick={() => setLogin(true)}><LogIn size={18} /> Ich habe schon ein Konto</button>
+          {!STATIC && <button className="btn ghost block" onClick={() => setLogin(true)}><LogIn size={18} /> Ich habe schon ein Konto</button>}
         </div>
       )}
 

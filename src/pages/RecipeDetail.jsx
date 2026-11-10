@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Clock, ChefHat, Heart, ShoppingCart, ListChecks, Plus, Camera, ShieldCheck, Users, Star, Copy, Share2, Trash2 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { Sheet, Dialog, Gallery, NutritionTable, Stepper } from '../components/ui.jsx'
-import { RECIPE_MAP, CUISINES, MEAL_TYPES, scaledNutrition } from '../data/recipes.js'
+import { RECIPE_MAP, CUISINES, MEAL_TYPES, scaledNutrition, imageUrl } from '../data/recipes.js'
 import { FOODS, foodMatchesDislike } from '../data/foods.js'
 import { SLOTS, fmt, slotForTime } from '../lib/nutrition.js'
 import { recipeToItems, formatAmount, cartToText, inPantry, substitutes } from '../lib/shopping.js'
@@ -28,7 +28,7 @@ export default function RecipeDetail({ id, onClose }) {
   const userPhotos = state.userPhotos[recipe.id] || []
   const portionLabel = persons === 1 ? 'Kleine Portion (1 Person)' : persons <= 3 ? `Mittlere Portion (${persons} Personen)` : `Familienportion (${persons} Personen)`
   const images = [
-    ...(recipe.image ? [{ src: `${recipe.image}/large`, full: recipe.image, caption: 'Originalfoto' }] : []),
+    ...(recipe.image ? [{ src: imageUrl(recipe, 'large'), full: recipe.image, caption: 'Originalfoto' }] : []),
     ...userPhotos.map(p => ({ src: p, caption: 'Dein Ergebnis' })),
   ]
 
@@ -154,7 +154,7 @@ export default function RecipeDetail({ id, onClose }) {
 
       {eat && <EatDialog recipe={recipe} onClose={() => setEat(false)} onConfirm={(slot, portions) => {
         const n = recipe.nutrition
-        addEntries([{ slot, name: recipe.name, recipeId: recipe.id, source: 'rezept', photo: recipe.image ? `${recipe.image}/small` : null, kcal: n.kcal * portions, p: n.p * portions, c: n.c * portions, f: n.f * portions, s: n.s * portions, fi: n.fi * portions }])
+        addEntries([{ slot, name: recipe.name, recipeId: recipe.id, source: 'rezept', photo: recipe.image ? imageUrl(recipe, 'small') : null, kcal: n.kcal * portions, p: n.p * portions, c: n.c * portions, f: n.f * portions, s: n.s * portions, fi: n.fi * portions }])
         update(s => ({ ...s, cooked: { ...s.cooked, [recipe.id]: (s.cooked[recipe.id] || 0) + 1 } }))
         notify(`${fmt(n.kcal * portions)} kcal zu deinem Tag hinzugefügt`)
         setEat(false)

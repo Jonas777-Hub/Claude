@@ -96,7 +96,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot }) {
         <div className="card tinted row" style={{ alignItems: 'flex-start', marginBottom: 14 }}>
           <AlertTriangle size={20} color="var(--orange)" style={{ flexShrink: 0 }} />
           <div className="small">
-            <b>KI-Erkennung ist auf diesem Server nicht aktiv.</b> Der Betreiber muss einen <code>ANTHROPIC_API_KEY</code> hinterlegen. Du kannst dein Essen trotzdem über die Lebensmittelsuche eintragen.
+            <b>KI-Fotoerkennung ist hier nicht aktiv.</b> Sie braucht den Kalora-Server mit Claude-Schlüssel (<code>ANTHROPIC_API_KEY</code>). Trag dein Essen solange über die Lebensmittelsuche ein.
             <div className="mt-s"><button className="btn sm" onClick={() => { onClose(); open('search', { slot }) }}>Zur Lebensmittelsuche</button></div>
           </div>
         </div>

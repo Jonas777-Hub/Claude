@@ -4,7 +4,10 @@ const TOKEN_KEY = 'kalora:token'
 export const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) } catch { return null } }
 export const setToken = t => { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ } }
 
+import { STATIC } from './static.js'
+
 export async function api(path, { method = 'GET', body, auth = true, signal } = {}) {
+  if (STATIC) throw Object.assign(new Error('In der Web-Vorschau nicht verfügbar – dafür wird der Kalora-Server benötigt.'), { static: true })
   const headers = { 'Content-Type': 'application/json' }
   const token = auth && getToken()
   if (token) headers.Authorization = `Bearer ${token}`

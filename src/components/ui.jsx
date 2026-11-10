@@ -83,6 +83,12 @@ export function Stepper({ value, onChange, min = 1, max = 99, step = 1, format =
   )
 }
 
+export function ConfirmButton({ children, confirmText = 'Wirklich? Nochmal tippen', onConfirm, className = 'btn danger', ...rest }) {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => { if (!armed) return; const t = setTimeout(() => setArmed(false), 3500); return () => clearTimeout(t) }, [armed])
+  return <button className={className} {...rest} onClick={() => { if (armed) { setArmed(false); onConfirm() } else setArmed(true) }}>{armed ? confirmText : children}</button>
+}
+
 export function Empty({ emoji = '🍽️', title, text, children }) {
   return (
     <div className="empty">

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { LogOut, Cloud, Bell, Moon, Sun, Monitor, Ban, User, Target, Activity, Scale, Database, Download, Trash2, X, Plus, Loader2 } from 'lucide-react'
 import { useStore, DEFAULT_STATE } from '../store.jsx'
-import { Segmented } from '../components/ui.jsx'
+import { Segmented, ConfirmButton } from '../components/ui.jsx'
 import { ACTIVITY_LEVELS, GOALS, SEXES, fmt, todayKey } from '../lib/nutrition.js'
 import { DISLIKE_GROUPS } from '../data/foods.js'
-import { RECIPES, recipeHasDislike } from '../data/recipes.js'
+import { RECIPES, recipeHasDislike, imageUrl } from '../data/recipes.js'
 import { requestNotificationPermission } from '../lib/reminders.js'
 import { SyncDot } from './Dashboard.jsx'
 import { api } from '../api.js'
+import { STATIC } from '../static.js'
 
 export function AuthForm({ onDone }) {
   const { login } = useStore()
@@ -67,7 +68,9 @@ export default function Profile() {
 
       {/* Konto */}
       <Section icon={Cloud} title="Konto & Cloud-Synchronisierung">
-        {user ? (
+        {STATIC ? (
+          <p className="small text-2">Das ist die Web-Vorschau von Kalora. Deine Daten bleiben in diesem Browser gespeichert. Konto, Cloud-Sync, geteilter Einkaufswagen und KI-Fotoerkennung laufen, sobald der Kalora-Server betrieben wird (siehe README).</p>
+        ) : user ? (
           <div className="row between">
             <div><div className="bold">{user.name}</div><div className="small muted">{user.email}</div></div>
             <button className="btn sm" onClick={logout}><LogOut size={16} /> Abmelden</button>
@@ -172,12 +175,12 @@ export default function Profile() {
       <Section icon={Database} title="Daten">
         <div className="col" style={{ gap: 8 }}>
           <button className="btn" onClick={() => { update(s => loadDemo(s)); notify('Demo-Daten der letzten 30 Tage geladen') }}><Database size={16} /> Demo-Daten laden (30 Tage)</button>
-          <button className="btn" onClick={() => {
+          {!STATIC && <button className="btn" onClick={() => {
             const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `kalora-export-${todayKey()}.json`; a.click()
-          }}><Download size={16} /> Daten exportieren (JSON)</button>
-          <button className="btn danger" onClick={() => { if (confirm('Alle lokalen Daten löschen und neu starten?')) { update(() => ({ ...DEFAULT_STATE })); notify('Zurückgesetzt') } }}><Trash2 size={16} /> App zurücksetzen</button>
-          {user && <button className="btn danger" onClick={async () => { if (confirm('Konto und alle Cloud-Daten endgültig löschen?')) { await api('/api/me', { method: 'DELETE' }); logout(); notify('Konto gelöscht') } }}><Trash2 size={16} /> Konto löschen</button>}
+          }}><Download size={16} /> Daten exportieren (JSON)</button>}
+          <ConfirmButton onConfirm={() => { update(() => ({ ...DEFAULT_STATE })); notify('Zurückgesetzt') }}><Trash2 size={16} /> App zurücksetzen</ConfirmButton>
+          {user && <ConfirmButton onConfirm={async () => { await api('/api/me', { method: 'DELETE' }); logout(); notify('Konto gelöscht') }}><Trash2 size={16} /> Konto löschen</ConfirmButton>}
         </div>
       </Section>
       <p className="tagline center mt-l">KALORA · Track. Analyse. Erfolg.</p>
@@ -219,7 +222,7 @@ function loadDemo(s) {
         const r = bySlot[sl][Math.floor(rnd() * bySlot[sl].length)]
         const k = 0.8 + rnd() * 0.4
         const n = r.nutrition
-        return { id: `demo-${key}-${sl}`, slot: sl, name: r.name, recipeId: r.id, source: 'rezept', photo: `${r.image}/small`, time: d.getTime(), kcal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k, s: n.s * k, fi: n.fi * k }
+        return { id: `demo-${key}-${sl}`, slot: sl, name: r.name, recipeId: r.id, source: 'rezept', photo: imageUrl(r, 'small'), time: d.getTime(), kcal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k, s: n.s * k, fi: n.fi * k }
       })
     }
     if (i % 2 === 0) weights.push({ date: key, kg: +(start + ((s.profile?.goal === 'aufbau' ? 1 : -1) * (30 - i) * 0.08) + (rnd() - 0.5) * 0.6).toFixed(1) })
