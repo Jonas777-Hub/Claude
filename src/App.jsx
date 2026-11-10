@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { Home, BookOpen, ChefHat, ShoppingCart, TrendingUp, User, Camera, MessageCircle, CalendarDays, Dumbbell } from 'lucide-react'
+import { Home, BookOpen, ChefHat, ShoppingCart, TrendingUp, User, Camera, MessageCircle, CalendarDays } from 'lucide-react'
 import { useStore } from './store.jsx'
 import { LOGO } from './logo.js'
 import { Toast } from './components/ui.jsx'
@@ -11,7 +11,6 @@ import WeekPlan from './pages/WeekPlan.jsx'
 import Cart from './pages/Cart.jsx'
 import Progress from './pages/Progress.jsx'
 import Coach from './pages/Coach.jsx'
-import Sport from './pages/Sport.jsx'
 import Profile from './pages/Profile.jsx'
 import RecipeDetail from './pages/RecipeDetail.jsx'
 import PhotoAnalysis from './pages/PhotoAnalysis.jsx'
@@ -28,7 +27,6 @@ const TABS = [
   { id: 'rezepte', label: 'Rezepte', icon: ChefHat },
   { id: 'wochenplan', label: 'Wochenplan', icon: CalendarDays, desktopOnly: true },
   { id: 'einkauf', label: 'Einkauf', icon: ShoppingCart },
-  { id: 'sport', label: 'Sporti', icon: Dumbbell, desktopOnly: true },
   { id: 'verlauf', label: 'Verlauf', icon: TrendingUp },
   { id: 'coach', label: 'KI-Coach', icon: MessageCircle, desktopOnly: true },
   { id: 'profil', label: 'Profil', icon: User, desktopOnly: true },
@@ -76,7 +74,7 @@ export default function App() {
   }
 
   const cartCount = state.cart.items.filter(i => !i.checked).length
-  const Page = { start: Dashboard, tagebuch: Diary, rezepte: Recipes, wochenplan: WeekPlan, einkauf: Cart, verlauf: Progress, sport: Sport, coach: Coach, profil: Profile }[tab] || Dashboard
+  const Page = { start: Dashboard, tagebuch: Diary, rezepte: Recipes, wochenplan: WeekPlan, einkauf: Cart, verlauf: Progress, coach: Coach, profil: Profile }[tab] || Dashboard
 
   return (
     <UICtx.Provider value={ui}>

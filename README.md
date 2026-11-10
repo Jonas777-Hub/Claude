@@ -37,7 +37,6 @@ Voraussetzung: Node.js ≥ 22.13 (nutzt die eingebaute SQLite-Datenbank `node:sq
 | **Gemeinsam einkaufen** | Freigabelink `…/cart/ABCD1234`, Teilen über WhatsApp / Telegram / Signal / E-Mail / SMS / Link; Echtzeit-Sync (WebSocket), abhaken, Personen zuweisen („Für mich"), Aktivitätsverlauf „Wer hat was geändert?", Offline-Warteschlange |
 | **Supermärkte** | Suche per Adresse/PLZ/Ort oder Standort (OpenStreetMap) für Edeka, Rewe, Kaufland, Lidl, Aldi, Netto, Penny, Norma, Globus; Vergleich von Entfernung, Verfügbarkeit und Preis, empfohlener Markt |
 | **Shopping Assistant** | Produkt im Laden scannen → passt es zum Rezept, zu den Makros, gibt es eine bessere Alternative? |
-| **Sporti** | Training eintragen (12 Sportarten, Dauer, Intensität, Notiz), verbrannte Kalorien nach MET-Werten und Körpergewicht, wahlweise nichts / die Hälfte / alles zum Tagesziel gutschreiben, 7-Tage-Übersicht, Trainingsserie; Dashboard-Karte und KI-Coach kennen dein Training |
 | **Verlauf** | Tag / Woche / Monat / Jahr: Kalorien-, Gewichts-, Protein-, Fett- und Zuckerverlauf, Tabellenansicht |
 | **Gewichtstracker** | Einträge, Diagramm mit Zielgewicht, Fortschritt in %, voraussichtliche Dauer |
 | **KI-Coach** | Chat mit Claude auf Basis deiner gespeicherten Daten (Ziele, heute gegessen, Bewertungen, Abneigungen); Rezeptnamen in Antworten sind antippbar |

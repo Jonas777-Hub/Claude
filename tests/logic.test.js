@@ -113,22 +113,3 @@ test('Echte Preise: Eingabe wird auf andere Mengen umgerechnet und pro Supermark
   assert.equal(lidl.realCount, 1)
   assert.ok(Math.abs(lidl.total - 3.98) < 0.001)
 })
-
-test('Sporti: Kalorienverbrauch, Bonus und Serie', async () => {
-  const { burnedKcal, sportBonus, streak, lastDays } = await import('../src/lib/sport.js')
-  const { todayKey } = await import('../src/lib/nutrition.js')
-  // Laufen 9,8 MET, 80 kg, 30 Min.: (9,8 − 1) × 80 × 0,5 = 352
-  assert.equal(burnedKcal({ sport: 'laufen', minutes: 30 }, 80), 352)
-  assert.ok(burnedKcal({ sport: 'laufen', minutes: 30, intensity: 'hart' }, 80) > 352)
-  assert.equal(burnedKcal({ sport: 'yoga', minutes: 0 }, 80), 0)
-  assert.equal(sportBonus([{ kcal: 352 }], 0.5), 180)
-  assert.equal(sportBonus([{ kcal: 352 }], 0), 0)
-  const d = n => { const x = new Date(); x.setDate(x.getDate() - n); return todayKey(x) }
-  const log = { [d(1)]: [{ kcal: 100, minutes: 20 }], [d(2)]: [{ kcal: 50, minutes: 10 }], [d(4)]: [{ kcal: 1, minutes: 1 }] }
-  assert.equal(streak(log), 2) // heute noch offen → Serie zählt weiter
-  assert.equal(streak({ ...log, [d(0)]: [{ kcal: 1, minutes: 5 }] }), 3)
-  const week = lastDays(log, 7)
-  assert.equal(week.length, 7)
-  assert.equal(week.at(-1).date, d(0))
-  assert.equal(week.reduce((t, x) => t + x.minutes, 0), 31)
-})

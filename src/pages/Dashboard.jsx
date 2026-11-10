@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Camera, Search, TrendingUp, MessageCircle, RefreshCw, Droplets, Plus, Minus, Sparkles, CheckCircle2, CalendarDays, Dumbbell } from 'lucide-react'
+import { Camera, Search, TrendingUp, MessageCircle, RefreshCw, Droplets, Plus, Minus, Sparkles, CheckCircle2, CalendarDays } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { Ring, NutrientRing, RecipeImage, MacroLine, FoodBackdrop, TINT } from '../components/ui.jsx'
 import { NUTRIENTS, fmt, nutrientStatus, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
 import { learnPreferences, todayPlan } from '../lib/recommend.js'
-import { DEFAULT_CREDIT, sportBonus, sumWorkouts } from '../lib/sport.js'
 
 export function SyncDot({ light }) {
   const { sync, online, user } = useStore()
@@ -15,17 +14,12 @@ export function SyncDot({ light }) {
 }
 
 export default function Dashboard() {
-  const { state, targets: base, addWater, user } = useStore()
+  const { state, targets, addWater, user } = useStore()
   const { open, go } = useUI()
   const [seed, setSeed] = useState(0)
   const today = todayKey()
   const entries = state.log[today] || []
   const consumed = sumEntries(entries)
-  // Sport von heute erhöht das Kalorienziel (Anteil einstellbar in Sporti)
-  const workouts = state.sport?.[today] || []
-  const moved = sumWorkouts(workouts)
-  const bonus = sportBonus(workouts, state.settings.sportCredit ?? DEFAULT_CREDIT)
-  const targets = useMemo(() => ({ ...base, kcal: base.kcal + bonus }), [base, bonus])
   const rem = remaining(targets, consumed)
   const prefs = useMemo(() => learnPreferences(state.ratings, state.cooked), [state.ratings, state.cooked])
   const loggedSlots = [...new Set(entries.map(e => e.slot))]
@@ -73,7 +67,7 @@ export default function Dashboard() {
           <div className="hero-stats">
             <div className="hero-stat"><div className="v">{fmt(consumed.kcal)}</div><div className="l">Verbraucht</div></div>
             <div className="hero-stat"><div className="v">{fmt(rem.kcal)}</div><div className="l">Verfügbar</div></div>
-            <div className="hero-stat"><div className="v">{fmt(targets.kcal)}</div><div className="l">Tagesziel{bonus > 0 ? ` (+${fmt(bonus)} Sport)` : ''}</div></div>
+            <div className="hero-stat"><div className="v">{fmt(targets.kcal)}</div><div className="l">Tagesziel</div></div>
           </div>
         </div>
       </section>
@@ -177,15 +171,6 @@ export default function Dashboard() {
           </div>
         </button>
       </div>
-
-      <button className="card row mt" style={{ gap: 14, textAlign: 'left', width: '100%' }} onClick={() => go('sport')}>
-        <span style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--grad-green)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Dumbbell size={26} /></span>
-        <span style={{ minWidth: 0, flex: 1 }}>
-          <div className="bold">Sporti</div>
-          <div className="small muted">{moved.count ? `Heute ${fmt(moved.minutes)} Min. · ${fmt(moved.kcal)} kcal verbrannt${bonus ? ` · +${fmt(bonus)} kcal fürs Ziel` : ''}` : 'Training eintragen – verbrannte Kalorien erhöhen dein Tagesziel.'}</div>
-        </span>
-        <Plus size={20} color="var(--green)" />
-      </button>
 
       <button className="card row mt" style={{ gap: 14, textAlign: 'left', width: '100%', background: 'linear-gradient(135deg, color-mix(in srgb, #F59E0B 14%, var(--card)), color-mix(in srgb, #EC4899 10%, var(--card)))' }} onClick={() => go('wochenplan')}>
         <span style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--grad-warm)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CalendarDays size={26} /></span>
