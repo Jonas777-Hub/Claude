@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { STATIC } from '../static.js'
 import { api } from '../api.js'
 import { FOOD_LIST } from '../data/foods.js'
+import { API_BASE } from '../config.js'
 
 let statusPromise = null
 
@@ -19,7 +20,13 @@ export function getAIStatus() {
     statusPromise = (async () => {
       if (STATIC) {
         const sample = await getSample()
-        if (!sample) return { enabled: false, images: false, via: null }
+        if (!sample) {
+          // Kein Claude in dieser Ansicht → eigener Kalora-KI-Server (falls eingerichtet)
+          if (API_BASE) {
+            try { const s = await api('/api/ai/status', { auth: false }); return { enabled: !!s.enabled, images: !!s.enabled, via: 'server', remaining: s.remaining } } catch { return { enabled: false, images: false, via: null } }
+          }
+          return { enabled: false, images: false, via: null }
+        }
         const limits = await sample.limits().catch(() => null)
         // limits() fehlt in älteren Apps – dann trotzdem versuchen und den Fehler beim Aufruf melden
         return { enabled: true, images: limits ? !!limits.images : true, via: 'claude' }
@@ -100,6 +107,7 @@ Kein verpacktes Lebensmittel zu sehen: {"is_product": false, "name": "", "notes"
 // ---------- Spracheingabe: „Was hast du gegessen?" ----------
 export async function analyzeText({ text, signal }) {
   const st = await getAIStatus()
+  if (st.via === 'server') return normalizePhoto(await api('/api/ai/analyze-text', { method: 'POST', body: { text: String(text).slice(0, 2000) } }))
   if (st.via !== 'claude') throw Object.assign(new Error('KI nicht verfügbar'), { code: 'no_ai' })
   const sample = await getSample()
   const prompt = `Der Nutzer beschreibt (per Sprache diktiert, evtl. mit Erkennungsfehlern), was er gegessen oder getrunken hat:
@@ -146,8 +154,7 @@ export async function analyzePhoto({ files, images = [], hint = '', plate = 'nor
       return normalizePhoto(r)
     } catch (e) { throw wrap(e) }
   }
-  const image = images[0]
-  return normalizePhoto(await api('/api/ai/analyze-photo', { method: 'POST', body: { image: image.base64, mediaType: image.mediaType, hint: `${hint} (Referenz: ${plate})` } }))
+  return normalizePhoto(await api('/api/ai/analyze-photo', { method: 'POST', body: { images: images.slice(0, 2).map(im => ({ data: im.base64, mediaType: im.mediaType })), hint, plate, memory: memory.slice(0, 12) } }))
 }
 
 function normalizePhoto(r) {

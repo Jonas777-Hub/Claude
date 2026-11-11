@@ -7,11 +7,46 @@ import crypto from 'node:crypto'
 import { WebSocketServer } from 'ws'
 import { db } from './db.js'
 import { hashPassword, verifyPassword, signToken, requireAuth, optionalAuth } from './auth.js'
-import { aiEnabled, analyzePhoto, coach, generateRecipe, readReceipt, readProduct } from './ai.js'
+import { aiEnabled, analyzePhoto, analyzeText, coach, generateRecipe, readReceipt, readProduct } from './ai.js'
 
 const app = express()
 app.disable('x-powered-by')
-app.use(express.json({ limit: '10mb' }))
+app.set('trust proxy', 1)
+app.use(express.json({ limit: '12mb' }))
+
+// ---------- CORS: die öffentliche App (z. B. GitHub Pages) darf die KI dieses Servers nutzen ----------
+const ALLOWED = (process.env.KALORA_ALLOWED_ORIGINS || 'https://jonas777-hub.github.io,http://localhost:5173,http://localhost:4173').split(',').map(s => s.trim()).filter(Boolean)
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (origin && ALLOWED.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    res.setHeader('Access-Control-Max-Age', '86400')
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(origin && ALLOWED.includes(origin) ? 204 : 403)
+  next()
+})
+
+// ---------- Kostenbremse: KI-Anfragen pro Person (IP) und insgesamt pro Tag ----------
+const PER_USER = Number(process.env.AI_DAILY_PER_USER) || 40
+const TOTAL = Number(process.env.AI_DAILY_TOTAL) || 600
+let quotaDay = '', quotaTotal = 0
+const quotaUsers = new Map()
+function quotaFor(ip) {
+  const day = new Date().toISOString().slice(0, 10)
+  if (day !== quotaDay) { quotaDay = day; quotaTotal = 0; quotaUsers.clear() }
+  return { used: quotaUsers.get(ip) || 0, total: quotaTotal }
+}
+function aiQuota(req, res, next) {
+  const ip = req.ip || 'unbekannt'
+  const q = quotaFor(ip)
+  if (q.used >= PER_USER) return res.status(429).json({ error: `Tageslimit erreicht (${PER_USER} KI-Anfragen pro Tag). Morgen geht's weiter!` })
+  if (q.total >= TOTAL) return res.status(429).json({ error: 'Die KI ist für heute ausgelastet. Morgen geht es weiter!' })
+  quotaUsers.set(ip, q.used + 1); quotaTotal++
+  next()
+}
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -208,33 +243,40 @@ app.post('/api/carts/:code/ops', rateLimit(300, 60_000), wrap(async (req, res) =
 }))
 
 // ---------- KI ----------
-app.get('/api/ai/status', (_req, res) => res.json({ enabled: aiEnabled(), model: aiEnabled() ? (process.env.KALORA_MODEL || 'claude-opus-5-5') : null }))
+app.get('/api/ai/status', (req, res) => { const q = quotaFor(req.ip || 'unbekannt'); res.json({ enabled: aiEnabled(), remaining: Math.max(0, PER_USER - q.used), limit: PER_USER }) })
 
 const requireAI = (_req, res, next) => aiEnabled() ? next() : res.status(503).json({ error: 'KI ist auf diesem Server nicht konfiguriert (ANTHROPIC_API_KEY fehlt).' })
 
-app.post('/api/ai/analyze-photo', optionalAuth, requireAI, rateLimit(15, 60_000), wrap(async (req, res) => {
-  const { image, mediaType, hint } = req.body || {}
-  if (!image || image.length > 7_000_000) return res.status(400).json({ error: 'Bitte ein Foto (max. ca. 5 MB) senden.' })
-  res.json(await analyzePhoto({ imageBase64: image, mediaType, hint: String(hint || '').slice(0, 300) }))
+app.post('/api/ai/analyze-photo', optionalAuth, requireAI, rateLimit(15, 60_000), aiQuota, wrap(async (req, res) => {
+  const { image, mediaType, images, hint, plate, memory } = req.body || {}
+  const list = (Array.isArray(images) ? images : image ? [{ data: image, mediaType }] : []).filter(im => typeof im?.data === 'string').slice(0, 2)
+  if (!list.length || list.some(im => im.data.length > 6_000_000)) return res.status(400).json({ error: 'Bitte ein Foto (max. ca. 4 MB) senden.' })
+  res.json(await analyzePhoto({ images: list, hint, plate, memory }))
 }))
 
-app.post('/api/ai/coach', optionalAuth, requireAI, rateLimit(20, 60_000), wrap(async (req, res) => {
+app.post('/api/ai/analyze-text', optionalAuth, requireAI, rateLimit(20, 60_000), aiQuota, wrap(async (req, res) => {
+  const { text } = req.body || {}
+  if (!text || String(text).length > 2000) return res.status(400).json({ error: 'Bitte beschreibe kurz, was du gegessen hast.' })
+  res.json(await analyzeText({ text }))
+}))
+
+app.post('/api/ai/coach', optionalAuth, requireAI, rateLimit(20, 60_000), aiQuota, wrap(async (req, res) => {
   const { question, history, context } = req.body || {}
   if (!question) return res.status(400).json({ error: 'Bitte stelle eine Frage.' })
   res.json({ answer: await coach({ question, history, context }) })
 }))
 
-app.post('/api/ai/generate-recipe', optionalAuth, requireAI, rateLimit(10, 60_000), wrap(async (req, res) => {
+app.post('/api/ai/generate-recipe', optionalAuth, requireAI, rateLimit(10, 60_000), aiQuota, wrap(async (req, res) => {
   res.json(await generateRecipe(req.body || {}))
 }))
 
-app.post('/api/ai/analyze-product', optionalAuth, requireAI, rateLimit(15, 60_000), wrap(async (req, res) => {
+app.post('/api/ai/analyze-product', optionalAuth, requireAI, rateLimit(15, 60_000), aiQuota, wrap(async (req, res) => {
   const { image, mediaType } = req.body || {}
   if (!image || image.length > 7_000_000) return res.status(400).json({ error: 'Bitte ein Foto des Produkts senden.' })
   res.json(await readProduct({ imageBase64: image, mediaType }))
 }))
 
-app.post('/api/ai/receipt', optionalAuth, requireAI, rateLimit(10, 60_000), wrap(async (req, res) => {
+app.post('/api/ai/receipt', optionalAuth, requireAI, rateLimit(10, 60_000), aiQuota, wrap(async (req, res) => {
   const { image, mediaType } = req.body || {}
   if (!image || image.length > 7_000_000) return res.status(400).json({ error: 'Bitte ein Foto des Kassenbons senden.' })
   res.json(await readReceipt({ imageBase64: image, mediaType }))
