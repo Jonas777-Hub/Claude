@@ -38,6 +38,8 @@ jobs:
           path: dist
 
   deploy:
+    # Veröffentlicht wird nur vom Hauptzweig – andere Zweige werden nur gebaut und getestet
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:
