@@ -84,6 +84,21 @@ Antworte NUR mit JSON:
  "unit": "g|ml", "portion": {"label": "1 Riegel", "grams": 45}, "package_grams": 45, "notes": "kurzer Hinweis, z. B. woher die Werte stammen"}
 Kein verpacktes Lebensmittel zu sehen: {"is_product": false, "name": "", "notes": "..."}`
 
+// ---------- Spracheingabe: „Was hast du gegessen?" ----------
+export async function analyzeText({ text, signal }) {
+  const st = await getAIStatus()
+  if (st.via !== 'claude') throw Object.assign(new Error('KI nicht verfügbar'), { code: 'no_ai' })
+  const sample = await getSample()
+  const prompt = `Der Nutzer beschreibt (per Sprache diktiert, evtl. mit Erkennungsfehlern), was er gegessen oder getrunken hat:
+"""${String(text).slice(0, 2000)}"""
+Erkenne jedes Lebensmittel und die Menge. Fehlt die Menge, nimm eine übliche Portion (z. B. 1 Ei = 60 g, 1 Apfel = 150 g, 1 Teller Nudeln = 350 g gekocht, 1 Scheibe Brot = 50 g).
+Ordne jedes Lebensmittel wenn möglich einem Schlüssel aus dieser Kalora-Datenbank zu (sonst null): ${FOOD_KEYS_TEXT}
+Achtung: rohe Datenbankwerte (Reis, Nudeln roh) – bei gekochten Mengen die Rohmenge eintragen (gekochter Reis ≈ 1/3 Rohgewicht, gekochte Nudeln ≈ 1/2,3).
+Antworte NUR mit JSON: {"dish": "kurzer Name der Mahlzeit", "confidence": "hoch|mittel|niedrig",
+ "items": [{"name": "Ei", "key": "ei", "grams": 120, "kcal": 186, "protein": 15.6, "carbs": 1.2, "fat": 13.2, "sugar": 1.2, "fiber": 0}], "notes": "kurzer Hinweis"}`
+  try { return normalizePhoto(await sample.json(prompt, { signal, cache: false })) } catch (e) { throw wrap(e) }
+}
+
 export async function analyzeProduct({ files, images = [], signal }) {
   const st = await getAIStatus()
   let r
