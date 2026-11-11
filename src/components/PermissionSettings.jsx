@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ShieldCheck, Loader2, RefreshCw, Settings2, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { STATIC } from '../static.js'
+import { useAIStatus } from '../lib/ai.js'
 
 const ROWS = [
   ['sample', 'KI (Claude)', 'Fotoerkennung, Produkt-Scan per Foto, Spracheingabe, KI-Coach, Rezeptgenerator'],
@@ -17,7 +18,8 @@ const LABEL = {
 }
 
 export default function PermissionSettings() {
-  const { perms, requestPermissions, managePermissions, refreshPerms, notify } = useStore()
+  const { perms, requestPermissions, managePermissions, refreshPerms, notify, cloud } = useStore()
+  const ai = useAIStatus()
   const [busy, setBusy] = useState('')
   if (!STATIC) return null
 
@@ -35,7 +37,18 @@ export default function PermissionSettings() {
     <section className="card mt">
       <div className="card-title"><ShieldCheck size={18} /> Berechtigungen</div>
       {perms?.noRuntime ? (
-        <p className="small text-2">Berechtigungen gibt es nur, wenn Kalora über <b>claude.ai</b> geöffnet wird und du dort <b>angemeldet</b> bist. Öffne den Kalora-Link in der Claude-App oder in Safari (angemeldet bei claude.ai) – dann kannst du hier alles erlauben.</p>
+        <>
+          <p className="small text-2">Diese Ansicht von Claude stellt Kalora <b>keine Verbindung zu Claude</b> bereit – deshalb kann die App hier nicht nach der Erlaubnis fragen.</p>
+          <div className="card tinted mt-s small">
+            <div className="bold">Diagnose</div>
+            <div className="kv mt-s">
+              <span className="k">Claude-Verbindung</span><span className="v">{typeof window !== 'undefined' && window.claude ? 'vorhanden' : '❌ fehlt'}</span>
+              <span className="k">KI (Claude)</span><span className="v">{ai == null ? '…' : ai.enabled ? '✅ verfügbar' : '❌ nicht verfügbar'}</span>
+              <span className="k">Speichern am Konto</span><span className="v">{cloud === 'on' ? '✅ aktiv' : cloud === 'connecting' ? '…' : '❌ nur lokal'}</span>
+            </div>
+          </div>
+          <p className="small text-2 mt-s"><b>So klappt es meistens:</b> 1) Claude-App im App Store aktualisieren. 2) Bei claude.ai angemeldet sein. 3) Den Link <b>in Safari</b> öffnen: <span style={{ userSelect: 'all' }}>claude.ai/artifact/MHYcTVG2BxAwoQ5F8UeMzg</span> – dort ist die Verbindung zu Claude am zuverlässigsten.</p>
+        </>
       ) : (
         <>
           <div className="list">
