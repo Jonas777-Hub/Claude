@@ -10,6 +10,7 @@ import { FOODS, searchFoods, nutrientsFor } from '../data/foods.js'
 import { RECIPES } from '../data/recipes.js'
 import ProductPhoto from './ProductPhoto.jsx'
 import VoiceEntry from './VoiceEntry.jsx'
+import PermissionBanner from '../components/PermissionBanner.jsx'
 import { Segmented } from '../components/ui.jsx'
 
 export { useAIStatus }
@@ -141,6 +142,7 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
       <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
 
+      {(phase === 'pick' || phase === 'error') && <PermissionBanner compact />}
       {(phase === 'pick' || phase === 'error') && (
         <div style={{ marginBottom: 12 }}>
           <Segmented value={kind} onChange={setKind} options={[{ id: 'mahlzeit', label: '🍽️ Teller' }, { id: 'produkt', label: '🍫 Produkt' }, { id: 'sprache', label: '🎤 Sprechen' }]} />

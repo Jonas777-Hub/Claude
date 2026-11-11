@@ -5,6 +5,7 @@ import { useUI } from '../App.jsx'
 import { Ring, NutrientRing, RecipeImage, MacroLine, FoodBackdrop, TINT } from '../components/ui.jsx'
 import { NUTRIENTS, fmt, nutrientStatus, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
 import { learnPreferences, todayPlan } from '../lib/recommend.js'
+import PermissionBanner from '../components/PermissionBanner.jsx'
 
 export function SyncDot({ light }) {
   const { sync, online, user, cloud } = useStore()
@@ -37,6 +38,8 @@ export default function Dashboard() {
 
   return (
     <div className="page">
+      <PermissionBanner />
+
       <section className="hero-food">
         <FoodBackdrop ids={['honig-balsamico-haehnchen', 'lachs-avocado-salat', 'shakshuka', 'pad-thai', 'tofu-cashew-wok', 'pancakes-beeren']} blur />
         <span className="food-shade" />

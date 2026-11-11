@@ -3,6 +3,7 @@ import { Send, Sparkles, Trash2 } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
 import { useAIStatus, askCoach } from '../lib/ai.js'
+import PermissionBanner from '../components/PermissionBanner.jsx'
 import { RECIPES } from '../data/recipes.js'
 import { FOODS } from '../data/foods.js'
 import { GOALS, fmt, remaining, sumEntries, todayKey } from '../lib/nutrition.js'
@@ -85,6 +86,7 @@ export default function Coach() {
         <div><div className="sub">{ai?.enabled ? 'Mit Claude' : 'Offline-Coach'}</div><h1>KI-Ernährungsberater</h1></div>
         {history.length > 0 && <button className="icon-btn" onClick={() => update(s => ({ ...s, coachHistory: [] }))} aria-label="Verlauf löschen"><Trash2 size={18} /></button>}
       </header>
+      <PermissionBanner compact />
       <div className="card tinted small">Heute noch offen: <b>{fmt(rem.kcal)} kcal</b> · <b>{fmt(rem.p)} g Protein</b> · <b>{fmt(rem.f)} g Fett</b> · <b>{fmt(rem.s)} g Zucker</b></div>
 
       <div className="chat mt">

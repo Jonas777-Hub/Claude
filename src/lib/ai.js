@@ -33,9 +33,22 @@ export function getAIStatus() {
   return statusPromise
 }
 
+// Nach erteilter Erlaubnis neu prüfen – alle offenen Ansichten bekommen den neuen Status
+const listeners = new Set()
+export function resetAIStatus() {
+  statusPromise = null
+  getAIStatus().then(v => listeners.forEach(fn => fn(v)))
+}
+
 export function useAIStatus() {
   const [s, setS] = useState(null)
-  useEffect(() => { let on = true; getAIStatus().then(v => on && setS(v)); return () => { on = false } }, [])
+  useEffect(() => {
+    let on = true
+    getAIStatus().then(v => on && setS(v))
+    const fn = v => on && setS(v)
+    listeners.add(fn)
+    return () => { on = false; listeners.delete(fn) }
+  }, [])
   return s
 }
 
