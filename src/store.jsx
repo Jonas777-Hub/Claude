@@ -101,7 +101,8 @@ export function StoreProvider({ children }) {
     let alive = true
     ;(async () => {
       const p = await window.claude.use('permissions').catch(() => null)
-      if (!alive || !p) return
+      if (!alive) return
+      if (!p) { setPerms({ sample: 'unavailable', db: 'unavailable', user: 'unavailable', noRuntime: true }); return }
       permsRef.current = p
       const st = await p.state().catch(() => null) || {}
       const now = Object.fromEntries(NEEDED.map(n => [n, st[n] || 'unavailable']))
@@ -112,6 +113,31 @@ export function StoreProvider({ children }) {
     })()
     return () => { alive = false }
   }, [applyPerms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Aktuellen Stand neu lesen (z. B. nach Änderung im Menü „Berechtigungen" der Seite)
+  const refreshPerms = useCallback(async () => {
+    const p = permsRef.current
+    if (!p) return null
+    const st = await p.state().catch(() => ({})) || {}
+    const now = Object.fromEntries(NEEDED.map(n => [n, st[n] || 'unavailable']))
+    applyPerms(now)
+    return now
+  }, [applyPerms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const managePermissions = useCallback(async () => {
+    const p = permsRef.current
+    if (!p) return false
+    try { await p.manage() } catch { return false }
+    await refreshPerms()
+    return true
+  }, [refreshPerms])
+
+  useEffect(() => {
+    if (!STATIC) return
+    const onVis = () => { if (document.visibilityState === 'visible') refreshPerms() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [refreshPerms])
 
   const requestPermissions = useCallback(async () => {
     const p = permsRef.current
@@ -319,7 +345,7 @@ export function StoreProvider({ children }) {
   const targets = useMemo(() => calcTargets(state.profile), [state.profile])
 
   const value = {
-    cloud, perms, requestPermissions,
+    cloud, perms, requestPermissions, refreshPerms, managePermissions,
     state, update, user, sync, online, login, logout, targets, toast, notify, setToast,
     addEntries, removeEntry, updateEntry, addWeight, addWater,
     cartOp, shareCart, joinCart, leaveCart, actor,

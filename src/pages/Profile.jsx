@@ -9,6 +9,7 @@ import { requestNotificationPermission } from '../lib/reminders.js'
 import { SyncDot } from './Dashboard.jsx'
 import { api } from '../api.js'
 import { STATIC } from '../static.js'
+import PermissionSettings from '../components/PermissionSettings.jsx'
 
 export function AuthForm({ onDone }) {
   const { login } = useStore()
@@ -89,6 +90,8 @@ export default function Profile() {
           </>
         )}
       </Section>
+
+      <PermissionSettings />
 
       {/* Persönliche Daten */}
       <Section icon={User} title="Persönliche Daten">
