@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, ImagePlus, Loader2, Trash2, Plus, Sparkles, AlertTriangle, Check, RotateCcw, Database, X, ChefHat } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
@@ -55,6 +55,8 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
   const [recipeQ, setRecipeQ] = useState('')
   const [kind, setKind] = useState(initialKind || 'mahlzeit')
   const [handoff, setHandoff] = useState(null)
+  // Ohne KI (z. B. eigene Web-Adresse): direkt mit dem Produkt-/Strichcode-Modus starten
+  useEffect(() => { if (ai && !ai.enabled && !initialKind) setKind('produkt') }, [ai]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const memory = state.photoMemory || []
 
