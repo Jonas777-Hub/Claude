@@ -38,7 +38,9 @@ export default function PermissionSettings() {
       <div className="card-title"><ShieldCheck size={18} /> Berechtigungen</div>
       {perms?.noRuntime ? (
         <>
-          <p className="small text-2">Diese Ansicht von Claude stellt Kalora <b>keine Verbindung zu Claude</b> bereit – deshalb kann die App hier nicht nach der Erlaubnis fragen.</p>
+          <p className="small text-2">{typeof window !== 'undefined' && window.claude
+            ? <>Claude stellt Kalora in dieser Ansicht <b>nicht alle Funktionen</b> bereit – die Erlaubnis-Abfrage gibt es hier nicht. Was verfügbar ist, siehst du unten.</>
+            : <>Diese Ansicht stellt Kalora <b>keine Verbindung zu Claude</b> bereit – deshalb kann die App hier nicht nach der Erlaubnis fragen.</>}</p>
           <div className="card tinted mt-s small">
             <div className="bold">Diagnose</div>
             <div className="kv mt-s">
@@ -47,6 +49,7 @@ export default function PermissionSettings() {
               <span className="k">Speichern am Konto</span><span className="v">{cloud === 'on' ? '✅ aktiv' : cloud === 'connecting' ? '…' : '❌ nur lokal'}</span>
             </div>
           </div>
+          {ai && !ai.enabled && cloud === 'on' && <p className="small text-2 mt-s">Speichern klappt – die <b>KI</b> gibt Claude in dieser Ansicht aber nicht frei. Tippe oben auf <b>„ÖFFNEN"</b> (in der Claude-App öffnen) – dort ist die KI oft verfügbar.</p>}
           <p className="small text-2 mt-s"><b>So klappt es meistens:</b> 1) Claude-App im App Store aktualisieren. 2) Bei claude.ai angemeldet sein. 3) Den Link <b>in Safari</b> öffnen: <span style={{ userSelect: 'all' }}>claude.ai/artifact/MHYcTVG2BxAwoQ5F8UeMzg</span> – dort ist die Verbindung zu Claude am zuverlässigsten.</p>
         </>
       ) : (
