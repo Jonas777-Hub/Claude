@@ -62,7 +62,51 @@ ${memory?.length ? `Der Nutzer hat diese Gerichte früher korrigiert – nutze d
 {"is_food": true, "dish": "Hähnchen mit Reis und Brokkoli", "confidence": "hoch|mittel|niedrig",
  "items": [{"name": "Hähnchenbrust", "key": "haehnchenbrust", "grams": 150, "kcal": 165, "protein": 35, "carbs": 0, "fat": 2.5, "sugar": 0, "fiber": 0}],
  "notes": "kurzer Hinweis, was die Schätzung unsicher macht"}
-Kein Essen zu sehen: {"is_food": false, "dish": "", "confidence": "niedrig", "items": [], "notes": "..."}`
+Kein Essen zu sehen: {"is_food": false, "dish": "", "confidence": "niedrig", "items": [], "notes": "..."}
+WICHTIG: Zeigt das Foto hauptsächlich ein VERPACKTES Markenprodukt (Riegel, Becher, Flasche, Tüte, Dose – noch in oder auf der Verpackung) statt einer angerichteten Mahlzeit,
+antworte NUR mit: {"is_food": true, "packaged": true, "dish": "Marke + Produktname", "confidence": "hoch", "items": [], "notes": ""}`
+}
+
+// ---------- Verpacktes Produkt (z. B. Proteinriegel) ----------
+const PRODUCT_PROMPT = n => `Du bekommst ${n > 1 ? `${n} Fotos EINES verpackten Lebensmittels` : 'ein Foto eines verpackten Lebensmittels, meist nur die VORDERSEITE'} – z. B. Proteinriegel, Joghurt, Skyr, Getränk, Chips, Müsliriegel, Fertiggericht.
+Der Nutzer fotografiert normalerweise NICHT die Nährwerttabelle – erkenne das Produkt trotzdem:
+1) Erkenne Marke, Produktname und genaue Sorte/Geschmack anhand von Logo, Schriftzug, Farben und Verpackungsdesign.
+2) Nährwerte pro 100 g bzw. 100 ml:
+   - Ist eine Nährwerttabelle sichtbar, lies sie EXAKT ab → source "etikett".
+   - Sonst nutze die offiziellen Herstellerangaben genau dieser Sorte, wie sie in Deutschland verkauft wird → source "bekannt".
+     Gleiche sie mit Angaben auf der Vorderseite ab (z. B. "20 g Protein", "nur 180 kcal", "ohne Zuckerzusatz", Füllmenge "45 g").
+   - Nur wenn du das konkrete Produkt nicht kennst: realistische Werte vergleichbarer Produkte dieser Art → source "geschätzt".
+3) Portion (z. B. "1 Riegel" = Riegelgewicht, "1 Becher", "1 Flasche") und Packungsinhalt in g/ml – von der Packung oder aus deinem Wissen. EAN nur, wenn lesbar.
+Antworte NUR mit JSON:
+{"is_product": true, "name": "Protein Bar Chocolate Brownie", "brand": "Marke", "ean": null,
+ "source": "etikett|bekannt|geschätzt", "confidence": "hoch|mittel|niedrig",
+ "per100": {"kcal": 380, "protein": 33, "carbs": 30, "sugar": 2.5, "fat": 13, "fiber": 12},
+ "unit": "g|ml", "portion": {"label": "1 Riegel", "grams": 45}, "package_grams": 45, "notes": "kurzer Hinweis, z. B. woher die Werte stammen"}
+Kein verpacktes Lebensmittel zu sehen: {"is_product": false, "name": "", "notes": "..."}`
+
+export async function analyzeProduct({ files, images = [], signal }) {
+  const st = await getAIStatus()
+  let r
+  if (st.via === 'claude') {
+    const sample = await getSample()
+    try { r = await sample.json(PRODUCT_PROMPT(files.length), { images: files, signal, cache: false }) } catch (e) { throw wrap(e) }
+  } else {
+    r = await api('/api/ai/analyze-product', { method: 'POST', body: { image: images[0].base64, mediaType: images[0].mediaType } })
+  }
+  const n = v => Math.max(0, Number(v) || 0)
+  const p = r?.per100 || {}
+  return {
+    is_product: r?.is_product !== false && !!r?.name,
+    name: String(r?.name || ''), brand: r?.brand ? String(r.brand) : '',
+    ean: r?.ean && /^\d{8,14}$/.test(String(r.ean)) ? String(r.ean) : null,
+    source: ['etikett', 'bekannt', 'geschätzt'].includes(r?.source) ? r.source : 'geschätzt',
+    confidence: ['hoch', 'mittel', 'niedrig'].includes(r?.confidence) ? r.confidence : 'mittel',
+    per100: { kcal: n(p.kcal), p: n(p.protein), c: n(p.carbs), s: n(p.sugar), f: n(p.fat), fi: n(p.fiber) },
+    unit: r?.unit === 'ml' ? 'ml' : 'g',
+    portion: r?.portion && n(r.portion.grams) ? { label: String(r.portion.label || '1 Portion'), grams: n(r.portion.grams) } : null,
+    packageGrams: n(r?.package_grams) || null,
+    notes: String(r?.notes || ''),
+  }
 }
 
 export async function analyzePhoto({ files, images = [], hint = '', plate = 'normaler Teller, ca. 26 cm Durchmesser', memory = [], signal }) {
@@ -82,6 +126,7 @@ function normalizePhoto(r) {
   const n = v => Math.max(0, Number(v) || 0)
   return {
     is_food: r?.is_food !== false,
+    packaged: r?.packaged === true,
     dish: String(r?.dish || 'Mahlzeit'),
     confidence: ['hoch', 'mittel', 'niedrig'].includes(r?.confidence) ? r.confidence : 'mittel',
     items: (Array.isArray(r?.items) ? r.items : []).map(i => ({ name: String(i.name || 'Lebensmittel'), key: typeof i.key === 'string' ? i.key : null, grams: n(i.grams), kcal: n(i.kcal), protein: n(i.protein), carbs: n(i.carbs), fat: n(i.fat), sugar: n(i.sugar), fiber: n(i.fiber) })),

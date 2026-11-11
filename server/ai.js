@@ -58,6 +58,28 @@ export async function analyzePhoto({ imageBase64, mediaType = 'image/jpeg', hint
   return msg.parsed_output
 }
 
+// ---------- Verpacktes Produkt ----------
+const ProductSchema = z.object({
+  is_product: z.boolean(), name: z.string(), brand: z.string().nullable(), ean: z.string().nullable(),
+  source: z.enum(['etikett', 'bekannt', 'geschätzt']), confidence: z.enum(['hoch', 'mittel', 'niedrig']),
+  per100: z.object({ kcal: z.number(), protein: z.number(), carbs: z.number(), sugar: z.number(), fat: z.number(), fiber: z.number() }),
+  unit: z.enum(['g', 'ml']), portion: z.object({ label: z.string(), grams: z.number() }).nullable(), package_grams: z.number().nullable(), notes: z.string(),
+})
+
+export async function readProduct({ imageBase64, mediaType = 'image/jpeg' }) {
+  const msg = await getClient().beta.messages.parse({
+    model: MODEL, max_tokens: 8000, ...FALLBACK,
+    output_config: { effort: 'low', format: betaZodOutputFormat(ProductSchema) },
+    messages: [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+      { type: 'text', text: 'Erkenne dieses verpackte Lebensmittel (Marke, Name, Sorte). Ist eine Nährwerttabelle sichtbar, lies die Werte pro 100 g/ml exakt ab (source "etikett"), sonst nutze bekannte Herstellerangaben ("bekannt") oder schätze ("geschätzt"). Lies Portionsgröße, Packungsinhalt und EAN, wenn sichtbar. Texte auf Deutsch.' },
+    ] }],
+  })
+  assertNotRefused(msg)
+  if (!msg.parsed_output) throw Object.assign(new Error('Produkt konnte nicht erkannt werden.'), { status: 502 })
+  return msg.parsed_output
+}
+
 // ---------- Kassenbon lesen ----------
 const ReceiptSchema = z.object({
   store: z.string().nullable(),

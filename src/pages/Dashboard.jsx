@@ -7,9 +7,9 @@ import { NUTRIENTS, fmt, nutrientStatus, remaining, sumEntries, todayKey } from 
 import { learnPreferences, todayPlan } from '../lib/recommend.js'
 
 export function SyncDot({ light }) {
-  const { sync, online, user } = useStore()
+  const { sync, online, user, cloud } = useStore()
   const map = { synced: ['var(--green)', 'Synchronisiert'], pending: ['var(--orange)', 'Speichert …'], offline: ['var(--muted)', 'Offline'], error: ['var(--red)', 'Sync-Fehler'], local: ['var(--muted)', 'Nur lokal'] }
-  const [c, l] = !online ? map.offline : map[user ? sync.status : 'local'] || map.local
+  const [c, l] = cloud === 'on' ? ['var(--green)', 'Am Claude-Konto gespeichert'] : !online ? map.offline : map[user ? sync.status : 'local'] || map.local
   return <span className={`row tiny ${light ? '' : 'muted'}`} style={{ gap: 5, opacity: light ? .85 : 1 }} title={l}><span className="sync-dot" style={{ background: c }} />{l}</span>
 }
 
@@ -100,7 +100,7 @@ export default function Dashboard() {
           <FoodBackdrop ids={['haehnchen-shawarma', 'ofenlachs-fenchel', 'gefuellte-paprika-quinoa']} />
           <span className="food-shade" />
           <span className="cam-icon"><Camera size={32} /></span>
-          <span><h3>Essen fotografieren</h3><p>KI erkennt Gericht, Portion & Nährwerte</p></span>
+          <span><h3>Essen fotografieren</h3><p>Teller oder verpacktes Produkt – KI erkennt alle Makros</p></span>
         </button>
         <button className="card row" style={{ gap: 14, textAlign: 'left' }} onClick={() => open('search')}>
           <span className="cam-icon" style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--green-soft)', color: 'var(--green-600)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Search size={24} /></span>
