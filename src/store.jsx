@@ -4,6 +4,7 @@ import { api, getToken, setToken, wsUrl } from './api.js'
 import { calcTargets, todayKey } from './lib/nutrition.js'
 import { mergeItems, newId } from './lib/shopping.js'
 import { connectCloud } from './lib/cloud.js'
+import { resetAIStatus } from './lib/ai.js'
 import { STATIC } from './static.js'
 
 const KEY = 'kalora:v1'
@@ -84,8 +85,78 @@ export function StoreProvider({ children }) {
   // ---------- Speichern am Claude-Konto (Web-App): automatisch, ohne Anmeldung ----------
   const cloudRef = useRef(null)
   const [cloud, setCloud] = useState(STATIC ? 'connecting' : 'off') // connecting | on | off
+  const [cloudTry, setCloudTry] = useState(0)
+
+  // ---------- Erlaubnis für Claude (KI + Speichern) – wichtig für jeden, dem der Link geschickt wird ----------
+  const NEEDED = ['sample', 'db', 'user']
+  const permsRef = useRef(null)
+  const [perms, setPerms] = useState(null) // { sample: 'granted' | 'prompt' | 'denied' | 'unavailable', … }
+  const applyPerms = useCallback(st => {
+    setPerms(p => ({ ...(p || {}), ...st }))
+    if (st?.sample === 'granted') resetAIStatus()
+    if (st?.db === 'granted' || st?.user === 'granted') setCloudTry(n => n + 1)
+  }, [])
+  useEffect(() => {
+    if (!STATIC || !window.claude?.use) return
+    let alive = true
+    ;(async () => {
+      const p = await window.claude.use('permissions').catch(() => null)
+      if (!alive) return
+      if (!p) { setPerms({ sample: 'unavailable', db: 'unavailable', user: 'unavailable', noRuntime: true }); return }
+      permsRef.current = p
+      const st = await p.state().catch(() => null) || {}
+      const now = Object.fromEntries(NEEDED.map(n => [n, st[n] || 'unavailable']))
+      setPerms(now)
+      // Gleich beim ersten Öffnen fragen (ein gemeinsamer Dialog)
+      const ask = NEEDED.filter(n => now[n] === 'prompt')
+      if (ask.length) { const res = await p.request(ask).catch(() => null); if (alive && res) applyPerms(res) }
+    })()
+    return () => { alive = false }
+  }, [applyPerms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Aktuellen Stand neu lesen (z. B. nach Änderung im Menü „Berechtigungen" der Seite)
+  const refreshPerms = useCallback(async () => {
+    const p = permsRef.current
+    if (!p) return null
+    const st = await p.state().catch(() => ({})) || {}
+    const now = Object.fromEntries(NEEDED.map(n => [n, st[n] || 'unavailable']))
+    applyPerms(now)
+    return now
+  }, [applyPerms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const managePermissions = useCallback(async () => {
+    const p = permsRef.current
+    if (!p) return false
+    try { await p.manage() } catch { return false }
+    await refreshPerms()
+    return true
+  }, [refreshPerms])
+
   useEffect(() => {
     if (!STATIC) return
+    const onVis = () => { if (document.visibilityState === 'visible') refreshPerms() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [refreshPerms])
+
+  const requestPermissions = useCallback(async () => {
+    const p = permsRef.current
+    if (!p) return false
+    const st = await p.state().catch(() => ({})) || {}
+    const ask = NEEDED.filter(n => st[n] === 'prompt')
+    if (ask.length) { const res = await p.request(ask).catch(() => null); if (res) applyPerms(res); return NEEDED.every(n => (res?.[n] || st[n]) === 'granted') }
+    if (NEEDED.some(n => st[n] === 'denied')) {
+      try { await p.manage() } catch { return false }
+      const after = await p.state().catch(() => ({})) || {}
+      applyPerms(Object.fromEntries(NEEDED.map(n => [n, after[n] || 'unavailable'])))
+      return NEEDED.every(n => after[n] === 'granted')
+    }
+    return true
+  }, [applyPerms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!STATIC) return
+    if (cloudRef.current) return
     let alive = true
     connectCloud().then(async c => {
       if (!alive) return
@@ -104,7 +175,7 @@ export function StoreProvider({ children }) {
       setCloud('on')
     })
     return () => { alive = false }
-  }, [])
+  }, [cloudTry])
   useEffect(() => {
     if (cloud !== 'on' || !state.profile) return
     const t = setTimeout(() => cloudRef.current?.save(stateRef.current), 1500)
@@ -274,7 +345,7 @@ export function StoreProvider({ children }) {
   const targets = useMemo(() => calcTargets(state.profile), [state.profile])
 
   const value = {
-    cloud,
+    cloud, perms, requestPermissions, refreshPerms, managePermissions,
     state, update, user, sync, online, login, logout, targets, toast, notify, setToast,
     addEntries, removeEntry, updateEntry, addWeight, addWater,
     cartOp, shareCart, joinCart, leaveCart, actor,

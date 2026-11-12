@@ -26,19 +26,24 @@ function assertNotRefused(msg) {
 }
 
 // ---------- Fotoerkennung ----------
+const ItemSchema = z.object({
+  name: z.string().describe('Deutscher Name des Lebensmittels'),
+  key: z.string().nullable().describe('Schlüssel aus der Kalora-Datenbank oder null'),
+  grams: z.number().describe('Geschätzte Menge in Gramm (bzw. ml)'),
+  kcal: z.number(), protein: z.number(), carbs: z.number(), fat: z.number(), sugar: z.number(), fiber: z.number(),
+})
 const PhotoSchema = z.object({
   is_food: z.boolean().describe('false, wenn auf dem Bild kein Essen zu sehen ist'),
+  packaged: z.boolean().describe('true, wenn hauptsächlich ein VERPACKTES Markenprodukt (Riegel, Becher, Flasche, Tüte, Dose) zu sehen ist statt einer angerichteten Mahlzeit'),
   dish: z.string().describe('Deutscher Name des erkannten Gerichts, z. B. "Hähnchen mit Reis und Brokkoli"'),
   confidence: z.enum(['hoch', 'mittel', 'niedrig']),
-  items: z.array(z.object({
-    name: z.string().describe('Deutscher Name des Lebensmittels'),
-    grams: z.number().describe('Geschätzte Menge in Gramm (bzw. ml) auf dem Teller'),
-    kcal: z.number(), protein: z.number(), carbs: z.number(), fat: z.number(), sugar: z.number(), fiber: z.number(),
-  })),
+  items: z.array(ItemSchema),
   notes: z.string().describe('Kurzer Hinweis zur Schätzung, z. B. versteckte Fette oder Unsicherheiten'),
 })
+const FOOD_KEYS_TEXT = () => FOOD_LIST.map(f => `${f.key}=${f.name}`).join("; ")
 
-export async function analyzePhoto({ imageBase64, mediaType = 'image/jpeg', hint = '' }) {
+export async function analyzePhoto({ images, hint = '', plate = '', memory = [] }) {
+  const mem = (Array.isArray(memory) ? memory : []).slice(0, 12).map(m => `- ${String(m.dish).slice(0, 80)}: ${(m.items || []).slice(0, 10).map(i => `${Math.round(Number(i.grams) || 0)} g ${String(i.name).slice(0, 40)}`).join(', ')}`).join('\n')
   const msg = await getClient().beta.messages.parse({
     model: MODEL,
     max_tokens: 16000,
@@ -48,13 +53,33 @@ export async function analyzePhoto({ imageBase64, mediaType = 'image/jpeg', hint
     messages: [{
       role: 'user',
       content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
-        { type: 'text', text: `Analysiere diese Mahlzeit: erkenne alle Lebensmittel, schätze die Mengen und berechne Kalorien, Protein, Kohlenhydrate, Fett, Zucker und Ballaststoffe pro Lebensmittel.${hint ? ` Hinweis des Nutzers: ${hint}` : ''}` },
+        ...images.slice(0, 2).map(im => ({ type: 'image', source: { type: 'base64', media_type: im.mediaType || 'image/jpeg', data: im.data } })),
+        { type: 'text', text: `${images.length > 1 ? 'Beide Fotos zeigen DIESELBE Mahlzeit (z. B. von oben und von der Seite) – zähle nichts doppelt. ' : ''}Analysiere diese Mahlzeit: erkenne alle Lebensmittel, schätze die Mengen und berechne Kalorien, Protein, Kohlenhydrate, Fett, Zucker und Ballaststoffe pro Lebensmittel.${plate ? ` Referenz für die Größe: ${String(plate).slice(0, 120)}.` : ''}
+Ordne jedes Lebensmittel wenn möglich einem Schlüssel aus dieser Datenbank zu (sonst null): ${FOOD_KEYS_TEXT()}
+${mem ? `Der Nutzer hat diese Gerichte früher korrigiert – nutze das, wenn das Foto dazu passt:\n${mem}\n` : ''}${hint ? `Hinweis des Nutzers: ${String(hint).slice(0, 300)}` : ''}
+Ist hauptsächlich ein verpacktes Markenprodukt zu sehen, setze packaged=true und lass items leer.` },
       ],
     }],
   })
   assertNotRefused(msg)
   if (!msg.parsed_output) throw Object.assign(new Error('Die Analyse konnte nicht gelesen werden.'), { status: 502 })
+  return msg.parsed_output
+}
+
+// ---------- Spracheingabe: „Was hast du gegessen?" ----------
+const TextSchema = z.object({ dish: z.string(), confidence: z.enum(['hoch', 'mittel', 'niedrig']), items: z.array(ItemSchema), notes: z.string() })
+
+export async function analyzeText({ text }) {
+  const msg = await getClient().beta.messages.parse({
+    model: MODEL, max_tokens: 8000, ...FALLBACK,
+    output_config: { effort: 'low', format: betaZodOutputFormat(TextSchema) },
+    messages: [{ role: 'user', content: `Der Nutzer beschreibt (per Sprache diktiert, evtl. mit Erkennungsfehlern), was er gegessen oder getrunken hat:
+"""${String(text).slice(0, 2000)}"""
+Erkenne jedes Lebensmittel und die Menge; fehlt sie, nimm eine übliche Portion. Ordne jedes Lebensmittel wenn möglich einem Schlüssel aus dieser Datenbank zu (sonst null): ${FOOD_KEYS_TEXT()}
+Die Datenbank rechnet bei Reis/Nudeln mit Rohgewicht – bei gekochten Mengen die Rohmenge angeben (gekochter Reis ≈ 1/3, gekochte Nudeln ≈ 1/2,3). Texte auf Deutsch.` }],
+  })
+  assertNotRefused(msg)
+  if (!msg.parsed_output) throw Object.assign(new Error('Konnte nicht ausgewertet werden.'), { status: 502 })
   return msg.parsed_output
 }
 

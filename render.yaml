@@ -1,0 +1,21 @@
+# Render-Blueprint für den Kalora-KI-Server (kostenloser Tarif).
+# Render → New → Blueprint → dieses Repository wählen. ANTHROPIC_API_KEY beim Anlegen eintragen.
+services:
+  - type: web
+    name: kalora
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22.13.0"
+      - key: ANTHROPIC_API_KEY
+        sync: false            # wird beim Anlegen abgefragt – geheim, nicht im Code
+      - key: KALORA_ALLOWED_ORIGINS
+        value: https://jonas777-hub.github.io
+      - key: AI_DAILY_PER_USER
+        value: "40"            # KI-Anfragen pro Person und Tag
+      - key: AI_DAILY_TOTAL
+        value: "600"           # KI-Anfragen insgesamt pro Tag (Kostenbremse)

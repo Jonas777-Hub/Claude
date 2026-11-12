@@ -32,6 +32,8 @@ jobs:
         env:
           VITE_STATIC: '1'
           VITE_REMOTE_IMAGES: '1'
+          # Adresse des Kalora-KI-Servers (Render). Abweichende Adresse: Repository-Variable KALORA_API_URL setzen.
+          VITE_API_BASE: ${{ vars.KALORA_API_URL || 'https://kalora.onrender.com' }}
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:

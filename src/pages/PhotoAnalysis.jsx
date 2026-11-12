@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, ImagePlus, Loader2, Trash2, Plus, Sparkles, AlertTriangle, Check, RotateCcw, Database, X, ChefHat } from 'lucide-react'
 import { useStore } from '../store.jsx'
 import { useUI } from '../App.jsx'
@@ -9,6 +9,8 @@ import { SLOTS, fmt, slotForTime } from '../lib/nutrition.js'
 import { FOODS, searchFoods, nutrientsFor } from '../data/foods.js'
 import { RECIPES } from '../data/recipes.js'
 import ProductPhoto from './ProductPhoto.jsx'
+import VoiceEntry from './VoiceEntry.jsx'
+import PermissionBanner from '../components/PermissionBanner.jsx'
 import { Segmented } from '../components/ui.jsx'
 
 export { useAIStatus }
@@ -55,6 +57,8 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
   const [recipeQ, setRecipeQ] = useState('')
   const [kind, setKind] = useState(initialKind || 'mahlzeit')
   const [handoff, setHandoff] = useState(null)
+  // Ohne KI (z. B. eigene Web-Adresse): direkt mit dem Produkt-/Strichcode-Modus starten
+  useEffect(() => { if (ai && !ai.enabled && !initialKind) setKind('produkt') }, [ai]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const memory = state.photoMemory || []
 
@@ -134,16 +138,17 @@ export default function PhotoAnalysis({ onClose, slot: initialSlot, kind: initia
   }, [recipeQ])
 
   return (
-    <Sheet title="Kalorien per Foto" onClose={() => { ctl.current?.abort(); onClose() }} full>
+    <Sheet title="Essen erfassen" onClose={() => { ctl.current?.abort(); onClose() }} full>
       <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { onFile(e.target.files[0]); e.target.value = '' }} />
 
+      {(phase === 'pick' || phase === 'error') && <PermissionBanner compact />}
       {(phase === 'pick' || phase === 'error') && (
         <div style={{ marginBottom: 12 }}>
-          <Segmented value={kind} onChange={setKind} options={[{ id: 'mahlzeit', label: '🍽️ Mahlzeit' }, { id: 'produkt', label: '🍫 Verpacktes Produkt' }]} />
+          <Segmented value={kind} onChange={setKind} options={[{ id: 'mahlzeit', label: '🍽️ Teller' }, { id: 'produkt', label: '🍫 Produkt' }, { id: 'sprache', label: '🎤 Sprechen' }]} />
         </div>
       )}
-      {kind === 'produkt' ? <ProductPhoto ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} initialPhotos={handoff} /> : <>
+      {kind === 'sprache' ? <VoiceEntry ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} /> : kind === 'produkt' ? <ProductPhoto ai={ai} slot={slot} setSlot={setSlot} onDone={onClose} initialPhotos={handoff} /> : <>
 
       {/* ---------- Fotos aufnehmen ---------- */}
       {(phase === 'pick' || phase === 'error') && (

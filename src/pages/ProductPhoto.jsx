@@ -6,7 +6,7 @@ import { useStore } from '../store.jsx'
 import { Stepper } from '../components/ui.jsx'
 import { resizeImage } from '../api.js'
 import { analyzeProduct } from '../lib/ai.js'
-import { lookupBarcode } from '../components/Scanner.jsx'
+import { lookupBarcode, decodeBarcodeFromBlob as detectBarcode, BarcodeScanner } from '../components/Scanner.jsx'
 import { SLOTS, fmt } from '../lib/nutrition.js'
 import { newId } from '../lib/shopping.js'
 
@@ -15,16 +15,6 @@ const SOURCE = {
   bekannt: ['✓ Herstellerangaben dieses Produkts', ''],
   geschätzt: ['Geschätzt – Produkt nicht eindeutig erkannt, bitte prüfen', 'orange'],
   openfoodfacts: ['✓ Open Food Facts (per Barcode)', ''],
-}
-
-// Barcode direkt im Foto erkennen (Chrome/Android) – optional
-async function detectBarcode(blob) {
-  try {
-    if (!('BarcodeDetector' in window)) return null
-    const bmp = await createImageBitmap(blob)
-    const codes = await new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }).detect(bmp)
-    return codes[0]?.rawValue || null
-  } catch { return null }
 }
 
 export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos }) {
@@ -40,6 +30,7 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
   const [count, setCount] = useState(1)
   const [grams, setGrams] = useState(100)
   const [save, setSave] = useState(true)
+  const [scan, setScan] = useState(false)
 
   const onFile = async f => {
     if (!f) return
@@ -47,16 +38,47 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
       const r = await resizeImage(f, 1600, 0.9)
       const next = [...photos, r].slice(0, 2)
       setPhotos(next); setPhase('pick')
-      if (ai?.images) analyze(next) // sofort erkennen – ein Foto von vorne reicht
+      if (ai) analyze(next) // sofort erkennen – mit KI ein Foto von vorne, ohne KI über den Strichcode
     } catch (e) { notify(e.message, 'err') }
   }
 
   // Foto aus dem Mahlzeiten-Modus übernommen → direkt erkennen
-  useEffect(() => { if (initialPhotos?.length && ai?.images) analyze(initialPhotos) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (initialPhotos?.length && ai) analyze(initialPhotos) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const showProduct = r => {
+    setProd(r)
+    setMode(r.portion ? 'portion' : r.packageGrams ? 'packung' : 'gramm')
+    setGrams(r.portion?.grams || r.packageGrams || 100)
+    setCount(1)
+    setPhase('result')
+  }
+
+  // Ohne KI: Strichcode → Open Food Facts (freie Produktdatenbank)
+  const fromBarcode = async code => {
+    setScan(false); setPhase('analyzing'); setErr('')
+    const off = await lookupBarcode(code).catch(() => null)
+    if (!off || off.kcal == null) {
+      setErr(`Das Produkt mit der Nummer ${code} ist nicht in der Produktdatenbank. Trag es über „Lebensmittel suchen" ein oder probier einen anderen Strichcode.`)
+      setPhase('pick'); return
+    }
+    showProduct({
+      is_product: true, name: off.name, brand: '', ean: code, source: 'openfoodfacts', confidence: 'hoch',
+      per100: { kcal: off.kcal, p: off.p, c: off.c, s: off.s, f: off.f, fi: off.fi }, unit: 'g',
+      portion: off.servingGrams ? { label: off.servingLabel ? off.servingLabel.replace(/\s*\([^)]*\)\s*$/, '') || '1 Portion' : '1 Portion', grams: off.servingGrams } : null,
+      packageGrams: off.packageGrams, notes: off.quantity ? `Packungsinhalt: ${off.quantity}` : '',
+    })
+  }
 
   const analyze = async (list = photos) => {
     const photos = list
     if (!photos.length) return
+    if (!ai?.enabled) {
+      setPhase('analyzing'); setErr('')
+      const code = await detectBarcode(photos[0].blob)
+      if (code) return fromBarcode(code)
+      setErr('Auf dem Foto wurde kein Strichcode gefunden. Fotografiere die Seite mit dem Strichcode (groß und scharf) – oder tippe auf „Strichcode live scannen".')
+      setPhase('pick'); return
+    }
     setPhase('analyzing'); setErr('')
     ctl.current = new AbortController()
     try {
@@ -72,11 +94,7 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
         if (off?.kcal) { r.per100 = { kcal: off.kcal, p: off.p, c: off.c, s: off.s, f: off.f, fi: off.fi }; r.source = 'openfoodfacts'; if (!r.name) r.name = off.name }
       }
       r.ean = ean || null
-      setProd(r)
-      setMode(r.portion ? 'portion' : r.packageGrams ? 'packung' : 'gramm')
-      setGrams(r.portion?.grams || r.packageGrams || 100)
-      setCount(1)
-      setPhase('result')
+      showProduct(r)
     } catch (e) {
       if (e.code === 'cancelled') { setPhase('pick'); return }
       setErr(e.message); setPhase('pick')
@@ -117,7 +135,7 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
             <div className="card center" style={{ padding: 22 }}>
               <div style={{ fontSize: 46 }}>🍫</div>
               <h3 className="mt-s">Verpacktes Produkt fotografieren</h3>
-              <p className="small muted mt-s">Proteinriegel, Joghurt, Getränk, Chips … Einfach die <b>Vorderseite</b> fotografieren – Kalora erkennt Marke und Sorte und trägt die Nährwerte ein.</p>
+              <p className="small muted mt-s">{ai?.enabled ? <>Proteinriegel, Joghurt, Getränk, Chips … Einfach die <b>Vorderseite</b> fotografieren – Kalora erkennt Marke und Sorte und trägt die Nährwerte ein.</> : <>Proteinriegel, Joghurt, Getränk, Chips … Fotografiere den <b>Strichcode</b> – Kalora holt alle Nährwerte automatisch.</>}</p>
             </div>
           ) : (
             <div className="grid" style={{ gridTemplateColumns: photos.length > 1 ? '1fr 1fr' : '1fr', gap: 8 }}>
@@ -135,8 +153,10 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
             <button className="btn" style={{ flex: 1, height: 52 }} onClick={() => fileRef.current.click()} disabled={photos.length >= 2}><ImagePlus size={18} /> Galerie</button>
           </div>
           {err && <div className="card tinted row" style={{ alignItems: 'flex-start' }}><AlertTriangle size={20} color="var(--red)" style={{ flexShrink: 0 }} /><p className="small">{err}</p></div>}
-          {ai?.enabled && <button className="btn primary block" style={{ height: 56 }} onClick={() => analyze()} disabled={!photos.length}>{err ? <><RotateCcw size={18} /> Erneut versuchen</> : <><Sparkles size={18} /> Produkt erkennen</>}</button>}
-          {ai && !ai.enabled && <p className="small muted">Claude ist hier nicht erreichbar. Nutze stattdessen „Lebensmittel suchen" → <b>Barcode scannen</b>.</p>}
+          {ai && !ai.enabled && !photos.length && <p className="small muted">In dieser Version erkennt Kalora Produkte über den <b>Strichcode</b>: einfach die Seite mit dem Strichcode fotografieren oder live scannen – alle Nährwerte kommen aus der Produktdatenbank Open Food Facts.</p>}
+          {photos.length > 0 && <button className="btn primary block" style={{ height: 56 }} onClick={() => analyze()}>{err ? <><RotateCcw size={18} /> Erneut versuchen</> : ai?.enabled ? <><Sparkles size={18} /> Produkt erkennen</> : <><ScanLine size={18} /> Strichcode lesen</>}</button>}
+          <button className="btn block" onClick={() => setScan(true)}><ScanLine size={18} /> Strichcode live scannen</button>
+          {scan && <div className="card"><BarcodeScanner onCode={fromBarcode} /><button className="btn ghost block mt-s" onClick={() => setScan(false)}>Schließen</button></div>}
           {(state.myProducts || []).length > 0 && (
             <div className="card">
               <div className="card-title"><Package size={16} /> Meine Produkte – mit einem Tipp eintragen</div>
@@ -163,10 +183,10 @@ export default function ProductPhoto({ ai, slot, setSlot, onDone, initialPhotos 
 
       {phase === 'analyzing' && (
         <div className="center">
-          <img src={photos[0].dataUrl} alt="Produkt" className="photo-preview" style={{ objectFit: 'contain', background: '#111' }} />
+          {photos[0] && <img src={photos[0].dataUrl} alt="Produkt" className="photo-preview" style={{ objectFit: 'contain', background: '#111' }} />}
           <Loader2 className="spin mt" size={28} color="var(--green)" />
-          <p className="bold mt-s">Claude liest das Produkt …</p>
-          <p className="small muted">Marke erkennen · Nährwerttabelle lesen · Portionsgröße finden</p>
+          <p className="bold mt-s">{ai?.enabled ? 'Claude liest das Produkt …' : 'Strichcode wird gelesen …'}</p>
+          <p className="small muted">{ai?.enabled ? 'Marke erkennen · Nährwerte finden · Portionsgröße bestimmen' : 'Produkt in Open Food Facts suchen'}</p>
           <button className="btn block mt" onClick={() => ctl.current?.abort()}>Abbrechen</button>
         </div>
       )}

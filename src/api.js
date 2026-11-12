@@ -5,18 +5,20 @@ export const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) } c
 export const setToken = t => { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ } }
 
 import { STATIC } from './static.js'
+import { API_BASE } from './config.js'
 
 export async function api(path, { method = 'GET', body, auth = true, signal } = {}) {
-  if (STATIC) throw Object.assign(new Error('In der Web-Vorschau nicht verfügbar – dafür wird der Kalora-Server benötigt.'), { static: true })
+  // Ohne eigenen Server: nur die KI-Endpunkte über den Kalora-KI-Server (API_BASE)
+  if (STATIC && !(API_BASE && path.startsWith('/api/ai/'))) throw Object.assign(new Error('In dieser Version nicht verfügbar – dafür wird der Kalora-Server benötigt.'), { static: true })
   const headers = { 'Content-Type': 'application/json' }
   const token = auth && getToken()
   if (token) headers.Authorization = `Bearer ${token}`
   let res
   try {
-    res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal })
+    res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal })
   } catch (e) {
     if (e.name === 'AbortError') throw e
-    throw Object.assign(new Error('Keine Verbindung zum Server.'), { offline: true })
+    throw Object.assign(new Error(API_BASE ? 'Der KI-Server antwortet gerade nicht – beim ersten Aufruf kann das bis zu einer Minute dauern. Bitte nochmal versuchen.' : 'Keine Verbindung zum Server.'), { offline: true })
   }
   let data = null
   try { data = await res.json() } catch { /* leer */ }

@@ -6,6 +6,7 @@ import { ACTIVITY_LEVELS, GOALS, SEXES, calcTargets, fmt, todayKey } from '../li
 import { AuthForm } from './Profile.jsx'
 import { STATIC } from '../static.js'
 import { FoodBackdrop } from '../components/ui.jsx'
+import PermissionBanner from '../components/PermissionBanner.jsx'
 
 export default function Onboarding() {
   const { update, user } = useStore()
@@ -153,6 +154,7 @@ export default function Onboarding() {
             <span className="k">BMI</span><span className="v">{targets.bmi}</span>
             {targets.etaWeeks && <><span className="k">Ziel erreicht in ca.</span><span className="v">{targets.etaWeeks} Wochen</span></>}
           </div>
+          <PermissionBanner />
           <p className="tiny muted">Berechnung nach Mifflin-St Jeor. Proteinbedarf 1,6–2,0 g/kg, Fett ≈ 28 % der Energie, Zucker max. 10 % (WHO), Ballaststoffe 14 g je 1000 kcal. Kein Ersatz für ärztliche Beratung.</p>
         </div>
       )}
