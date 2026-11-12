@@ -8,6 +8,9 @@ import { FOODS, nutrientsFor, searchFoods } from '../data/foods.js'
 import { SLOTS, fmt } from '../lib/nutrition.js'
 
 const SR = typeof window !== 'undefined' ? window.SpeechRecognition || window.webkitSpeechRecognition : null
+// Innerhalb von claude.ai sperrt Claude das Mikrofon für die Seite (außer über die eigene Diktierfunktion)
+const IN_CLAUDE = typeof window !== 'undefined' && !!window.claude
+const IS_IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
 const fromDb = (key, grams, name) => {
   const n = nutrientsFor(key, grams)
   return { name: name || FOODS[key].name, key, grams, kcal: n.kcal, protein: n.p, carbs: n.c, fat: n.f, sugar: n.s, fiber: n.fi }
@@ -27,11 +30,47 @@ export default function VoiceEntry({ ai, slot, setSlot, onDone }) {
   const recRef = useRef(null)
   const baseText = useRef('')
 
-  useEffect(() => () => recRef.current?.abort?.(), [])
+  const taRef = useRef(null)
+  const dictRef = useRef(null)
+  const watchdog = useRef(null)
+  // Claude-eigene Diktierfunktion (claude.ai im Computer-Browser / Android-Chrome) – vorab laden,
+  // weil start() direkt im Tipp aufgerufen werden muss
+  useEffect(() => {
+    let alive = true, offs = []
+    window.claude?.use?.('dictation').then(d => {
+      if (!alive || !d) return
+      dictRef.current = d
+      offs = [
+        d.onPartial(({ text: t }) => setText(baseText.current + t)),
+        d.onFinal(({ text: t }) => { baseText.current = (baseText.current + t).replace(/^\s+/, ''); setText(baseText.current) }),
+        d.onState(({ state, reason }) => {
+          setRec(state === 'starting' || state === 'listening' || state === 'finishing')
+          if (state === 'idle' && ['not_granted', 'unavailable', 'upstream_error'].includes(reason)) keyboardMode()
+        }),
+      ]
+    }).catch(() => {})
+    return () => { alive = false; offs.forEach(f => f?.()); recRef.current?.abort?.(); clearTimeout(watchdog.current) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fallback, der immer geht: Textfeld öffnen → Mikrofon der Tastatur
+  const keyboardMode = () => {
+    setRec(false)
+    setMicErr('keyboard')
+    const el = taRef.current
+    if (el) { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length) }
+  }
 
   const start = () => {
     setMicErr('')
-    if (!SR) { setMicErr('keyboard'); return }
+    baseText.current = text ? text.trim() + ' ' : ''
+    // 1) Claude-Diktat (muss synchron im Tipp starten)
+    if (dictRef.current) {
+      dictRef.current.start({ language: 'de' }).catch(e => { if (e?.code !== 'stopped' && e?.code !== 'dismissed') keyboardMode() })
+      return
+    }
+    // 2) In claude.ai ohne Diktat (z. B. iPhone-App) oder ohne Spracherkennung: Tastatur-Mikrofon
+    if (IN_CLAUDE || !SR) { keyboardMode(); return }
+    // 3) Spracherkennung des Browsers (Safari, Chrome) – mit Absicherung, falls sie stumm bleibt
     try {
       const r = new SR()
       r.lang = 'de-DE'; r.interimResults = true; r.continuous = true
@@ -41,14 +80,18 @@ export default function VoiceEntry({ ai, slot, setSlot, onDone }) {
         for (let i = 0; i < ev.results.length; i++) s += ev.results[i][0].transcript
         setText(baseText.current + s)
       }
-      r.onerror = ev => { setRec(false); setMicErr(ev.error === 'not-allowed' || ev.error === 'service-not-allowed' ? 'keyboard' : 'Die Aufnahme hat nicht geklappt – versuch es nochmal oder nutze das Mikrofon der Tastatur.') }
-      r.onend = () => setRec(false)
+      let heard = false
+      r.onstart = r.onaudiostart = () => { heard = true }
+      r.onresult = (orig => ev => { heard = true; orig(ev) })(r.onresult)
+      r.onerror = ev => { clearTimeout(watchdog.current); if (ev.error === 'no-speech' || ev.error === 'aborted') { setRec(false); return } keyboardMode() }
+      r.onend = () => { clearTimeout(watchdog.current); setRec(false) }
       r.start()
+      watchdog.current = setTimeout(() => { if (!heard) { try { r.abort() } catch { /* egal */ } keyboardMode() } }, 4000)
       recRef.current = r
       setRec(true)
     } catch { setMicErr('keyboard') }
   }
-  const stop = () => { recRef.current?.stop(); setRec(false) }
+  const stop = () => { clearTimeout(watchdog.current); if (dictRef.current?.active()) dictRef.current.stop(); recRef.current?.stop(); setRec(false) }
 
   const calculate = async () => {
     if (rec) stop()
@@ -145,9 +188,15 @@ export default function VoiceEntry({ ai, slot, setSlot, onDone }) {
       </div>
 
       {micErr === 'keyboard' ? (
-        <div className="card tinted row" style={{ alignItems: 'flex-start' }}>
-          <Mic size={20} color="var(--green)" style={{ flexShrink: 0 }} />
-          <p className="small">Die direkte Aufnahme ist hier nicht möglich. <b>So geht's trotzdem:</b> Tippe unten ins Textfeld und dann auf der Tastatur auf das <b>Mikrofon 🎤</b> – einfach lossprechen.</p>
+        <div className="card" style={{ background: 'color-mix(in srgb, #22C55E 12%, var(--card))', borderColor: 'color-mix(in srgb, #22C55E 35%, transparent)' }}>
+          <div className="row" style={{ alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 30, lineHeight: 1 }}>🎤</span>
+            <div className="small">
+              <b style={{ fontSize: 15 }}>Jetzt auf der Tastatur auf das Mikrofon tippen</b>
+              <div className="mt-s">{IS_IOS ? <>Unten <b>rechts neben der Leertaste</b> (oder unten rechts unter der Tastatur) ist das 🎤. Antippen, sprechen, dann nochmal antippen – der Text erscheint im Feld.</> : <>Auf der Tastatur das 🎤 antippen und sprechen – der Text erscheint im Feld.</>}</div>
+              <div className="tiny muted mt-s">Kein 🎤 zu sehen? {IS_IOS ? 'Einstellungen → Allgemein → Tastatur → „Diktierfunktion" einschalten.' : 'In den Tastatur-Einstellungen die Spracheingabe einschalten.'}</div>
+            </div>
+          </div>
         </div>
       ) : micErr && (
         <div className="card tinted row" style={{ alignItems: 'flex-start' }}><AlertTriangle size={20} color="var(--orange)" style={{ flexShrink: 0 }} /><p className="small">{micErr}</p></div>
@@ -155,7 +204,7 @@ export default function VoiceEntry({ ai, slot, setSlot, onDone }) {
 
       <div className="field">
         <label htmlFor="voice-text">Was hast du gegessen?</label>
-        <textarea id="voice-text" className="input" rows={3} value={text} onChange={e => setText(e.target.value)} placeholder="Sprich oder schreib: z. B. zwei Eier, 150 g Reis und ein Apfel" />
+        <textarea ref={taRef} id="voice-text" className="input" rows={3} value={text} onChange={e => setText(e.target.value)} placeholder="Sprich oder schreib: z. B. zwei Eier, 150 g Reis und ein Apfel" />
       </div>
       {!text && <div className="chips wrap">{EXAMPLES.slice(1).map(e => <button key={e} className="chip" style={{ height: 'auto', padding: '6px 12px', fontSize: 13 }} onClick={() => setText(e)}>{e}</button>)}</div>}
       <button className="btn primary block" style={{ height: 56 }} onClick={calculate} disabled={!text.trim()}><Sparkles size={18} /> Kalorien berechnen</button>
