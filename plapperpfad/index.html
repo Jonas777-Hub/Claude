@@ -1,4 +1,4 @@
-<title>Plapperpfad</title>
+<title>Polyglo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -786,7 +786,7 @@ function renderMe(){
 /* ---------- Start ---------- */
 function renderOnboarding(step=0, pickLang=null){
   if(step===0){
-    app.innerHTML=`<section class="stack"><div class="hero"><div class="eyebrow">Willkommen bei Plapperpfad</div><h1>Lern sprechen, <em>nicht nur</em> lesen.</h1><p class="muted" style="margin:0;font-size:17px">Station für Station: erst Wörter, dann Sätze, dann sprichst du sie laut. Die App hört zu, korrigiert deine Aussprache und Schreibweise und merkt sich alles.</p></div>
+    app.innerHTML=`<section class="stack"><div class="hero"><div class="eyebrow">Willkommen bei Polyglo</div><h1>Lern sprechen, <em>nicht nur</em> lesen.</h1><p class="muted" style="margin:0;font-size:17px">Station für Station: erst Wörter, dann Sätze, dann sprichst du sie laut. Die App hört zu, korrigiert deine Aussprache und Schreibweise und merkt sich alles.</p></div>
     <div class="eyebrow">Welche Sprache möchtest du lernen?</div>
     <div class="langgrid">${Object.entries(LANGS).map(([k,l])=>`<button class="langcard" data-lang="${k}"><span class="code">${l.code}</span><b>${l.name}</b><small>${l.self}</small></button>`).join('')}</div></section>`;
     app.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.lang; Object.keys(LANGS[k].variants).length>1 ? renderOnboarding(1,k) : renderOnboarding(2,k) }));
@@ -989,7 +989,7 @@ function speakStep(step){
   refreshMic = () => {
     if(!$('#micbtn')) return;
     if(!cap.dictReady){ btn.disabled=true; live.textContent='Mikrofon wird vorbereitet …'; return }
-    if(!cap.dict){ btn.disabled=true; live.innerHTML='Das Mikrofon geht hier nicht.<br><span style="font-size:15px">Öffne Plapperpfad in Chrome oder Edge auf dem Computer oder in der Claude-Desktop-App. Bis dahin: laut nachsprechen und selbst bewerten.</span>';
+    if(!cap.dict){ btn.disabled=true; live.innerHTML='Das Mikrofon geht hier nicht.<br><span style="font-size:15px">Öffne Polyglo in Chrome oder Edge auf dem Computer oder in der Claude-Desktop-App. Bis dahin: laut nachsprechen und selbst bewerten.</span>';
       foot('none',{html:`<button class="btn good wide" id="selfok">Hab’s laut gesagt</button><button class="btn ghost sm" id="fskip">Überspringen</button>`});
       $('#selfok').onclick=()=>{ LS_.firstTry.set(it.id+'speak',true); LS_.graded++; LS_.right++; LS_.xp+=4; srs(it,true); nextStep() }; $('#fskip').onclick=skip; return }
     btn.disabled=false;
@@ -1081,7 +1081,7 @@ function openTalk(topic){
   el.querySelectorAll('[data-k]').forEach(b=>{ b.addEventListener('mousedown',e=>e.preventDefault()); b.addEventListener('click',()=>{ const s=cin.selectionStart??cin.value.length; cin.value=cin.value.slice(0,s)+b.dataset.k+cin.value.slice(s); cin.focus(); cin.selectionStart=cin.selectionEnd=s+1; send.disabled=false }) });
   cin.addEventListener('input',()=>{ send.disabled=!cin.value.trim()||busy; cin.style.height='auto'; cin.style.height=Math.min(140,cin.scrollHeight)+'px' });
   cin.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); if(!send.disabled) send.click() } });
-  if(!aiOn()){ add(`<b>Die KI ist hier nicht verfügbar.</b><br>Das KI-Gespräch funktioniert, wenn du Plapperpfad auf claude.ai angemeldet öffnest und die KI-Nutzung erlaubst.`,'msg tu'); return }
+  if(!aiOn()){ add(`<b>Die KI ist hier nicht verfügbar.</b><br>Das KI-Gespräch funktioniert, wenn du Polyglo auf claude.ai angemeldet öffnest und die KI-Nutzung erlaubst.`,'msg tu'); return }
   if(cap.dictReady && !cap.dict) cmic.hidden=true;
   let base='';
   cmic.addEventListener('click',()=>{
