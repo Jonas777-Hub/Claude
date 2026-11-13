@@ -9,7 +9,7 @@
   --bg:#EBF1F6; --surface:#FFFFFF; --surface-2:#F4F8FB; --ink:#152836; --muted:#5A6C7A; --line:#D3DEE7;
   --accent:#EE5A3B; --accent-ink:#FFFFFF; --accent-deep:#C2401F;
   --gold:#F2AE00; --gold-soft:#FFF1C7; --good:#14995A; --good-soft:#DDF5E8; --bad:#D63A48; --bad-soft:#FCE3E5;
-  --sea:#2B7BB9; --sea-soft:#DCEBF7; --locked:#C3CFD9;
+  --sea:#2B7BB9; --sea-soft:#DCEBF7; --violet:#6F52CC; --locked:#C3CFD9;
   --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --f-body:"Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
   --r:18px; --shadow:0 1px 0 rgba(21,40,54,.06), 0 8px 24px -12px rgba(21,40,54,.18);
@@ -18,12 +18,12 @@
   --bg:#0E1820; --surface:#16242F; --surface-2:#1C2D3A; --ink:#E6EDF2; --muted:#93A6B4; --line:#2A3D4B;
   --accent:#FF6E4F; --accent-ink:#1A0C07; --accent-deep:#D84E30;
   --gold:#FFC23D; --gold-soft:#3A3014; --good:#3CCB84; --good-soft:#123527; --bad:#FF6B78; --bad-soft:#3D1A1F;
-  --sea:#62A9E0; --sea-soft:#17324A; --locked:#3A4C5A; --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6); color-scheme:dark}}
+  --sea:#62A9E0; --sea-soft:#17324A; --violet:#A08BF2; --locked:#3A4C5A; --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E1820; --surface:#16242F; --surface-2:#1C2D3A; --ink:#E6EDF2; --muted:#93A6B4; --line:#2A3D4B;
   --accent:#FF6E4F; --accent-ink:#1A0C07; --accent-deep:#D84E30;
   --gold:#FFC23D; --gold-soft:#3A3014; --good:#3CCB84; --good-soft:#123527; --bad:#FF6B78; --bad-soft:#3D1A1F;
-  --sea:#62A9E0; --sea-soft:#17324A; --locked:#3A4C5A; --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6); color-scheme:dark}
+  --sea:#62A9E0; --sea-soft:#17324A; --violet:#A08BF2; --locked:#3A4C5A; --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6); color-scheme:dark}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
@@ -77,12 +77,14 @@ svg.i{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .road .done{stroke:var(--gold);stroke-width:14;fill:none;stroke-linecap:round}
 .road .dash{stroke:var(--surface);stroke-width:2.5;fill:none;stroke-dasharray:2 12;stroke-linecap:round}
 .st{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;width:150px}
-.node{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 0 var(--accent-deep);font-family:var(--f-display);font-weight:800;font-size:26px;position:relative;transition:transform .1s}
-.node:active{transform:translateY(4px);box-shadow:0 2px 0 var(--accent-deep)}
-.node.done{background:var(--gold);color:#2B2000;box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 65%,#000)}
+.node{width:80px;height:80px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.4),transparent 46%),var(--nc,var(--accent));color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--nc,var(--accent)) 66%,#000);font-family:var(--f-display);font-weight:800;font-size:26px;position:relative;transition:transform .1s}
+.node:active{transform:translateY(4px);box-shadow:0 2px 0 color-mix(in srgb,var(--nc,var(--accent)) 66%,#000)}
+.node svg.i{width:34px;height:34px;stroke-width:2.1}
+.node .n{position:absolute;bottom:-3px;right:-3px;width:26px;height:26px;border-radius:50%;background:var(--surface);color:var(--ink);font-size:12px;display:grid;place-items:center;box-shadow:var(--shadow)}
+.node.done{background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.45),transparent 46%),var(--gold);color:#2B2000;box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 65%,#000)}
 .node.locked{background:var(--locked);color:var(--surface);box-shadow:0 6px 0 color-mix(in srgb,var(--locked) 75%,#000)}
 .node.ai{background:var(--sea);color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--sea) 70%,#000)}
-.node.cur::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--accent);opacity:.5;animation:pulse 1.8s ease-out infinite}
+.node.cur::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--nc,var(--accent));opacity:.5;animation:pulse 1.8s ease-out infinite}
 @keyframes pulse{0%{transform:scale(.92);opacity:.7}100%{transform:scale(1.18);opacity:0}}
 .st .lbl{font-weight:800;font-size:14px;text-align:center;line-height:1.2;background:var(--bg);padding:2px 8px;border-radius:8px}
 .stars{display:flex;gap:2px}
@@ -258,6 +260,26 @@ mark.x{background:var(--gold);color:#2B2000;border-radius:4px;padding:0 1px}
 canvas.confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
 input.txt{width:100%;min-height:50px;padding:0 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-size:17px;font-weight:700}
 input.txt:focus{outline:none;border-color:var(--sea)}
+body{background-image:radial-gradient(color-mix(in srgb,var(--line) 75%,transparent) 1.1px,transparent 1.5px);background-size:22px 22px}
+.poly{display:block;flex:none;overflow:visible;animation:hop .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes hop{35%{transform:translateY(-7px) rotate(-5deg)}}
+.herocard{display:flex;gap:12px;align-items:center;background:var(--surface);border-radius:24px;box-shadow:var(--shadow);padding:14px 16px}
+.bubble{position:relative;flex:1;min-width:0;background:var(--surface-2);border-radius:16px;padding:10px 14px;font-weight:700;font-size:15px}
+.bubble::before{content:"";position:absolute;left:-8px;top:22px;border:8px solid transparent;border-right-color:var(--surface-2);border-left:0}
+.bubble .hi{font-family:var(--f-display);font-size:22px;font-weight:800;color:var(--accent);display:block;line-height:1.2}
+.secband{margin-top:28px;border-radius:20px;padding:16px 18px;color:#fff;background:radial-gradient(circle at 90% 0%,rgba(255,255,255,.22),transparent 55%),var(--h);display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 5px 0 color-mix(in srgb,var(--h) 62%,#000)}
+.secband .eyebrow{color:rgba(255,255,255,.88)}
+.secband h2{font-size:24px;color:#fff}
+.secprog{font-weight:800;display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.2);padding:6px 10px;border-radius:12px;white-space:nowrap}
+.secprog svg{width:16px;height:16px;fill:var(--gold)}
+.st .lbl small{display:block;font-size:11px;color:var(--violet);font-weight:800}
+.verdict{display:inline-flex;align-items:center;gap:6px;font-weight:800;padding:4px 10px;border-radius:10px;font-size:15px}
+.verdict.ok{background:var(--good-soft);color:var(--good)} .verdict.no{background:var(--bad-soft);color:var(--bad)}
+.verdict svg{width:18px;height:18px}
+.live svg.i{width:16px;height:16px;vertical-align:-3px}
+.modechip{font-size:13px;padding:6px 10px;box-shadow:none;border:2px solid var(--line)}
+.modechip svg{width:16px;height:16px}
+.result .poly{width:140px;height:140px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -294,9 +316,47 @@ const ICONS = {
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
   ear:'<path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-5.5 1.5"/><path d="M10 9a2 2 0 0 1 4 0"/>',
   bubble:'<path d="M12 4c4.4 0 8 2.9 8 6.5S16.4 17 12 17c-.8 0-1.6-.1-2.3-.3L5 19l1.2-3.6C4.8 14.2 4 12.4 4 10.5 4 6.9 7.6 4 12 4z"/>',
+  wave:'<path d="M7 12V6.5a1.5 1.5 0 0 1 3 0V11M10 10.5V4.5a1.5 1.5 0 0 1 3 0V10.5M13 10.5V5.5a1.5 1.5 0 0 1 3 0V12M16 10a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-12.6 4.2L4 15a1.6 1.6 0 0 1 2.6-1.9L7 14"/>',
+  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 14.2A5 5 0 0 1 21 19"/>',
+  cup:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5v2.5M11 3.5v2.5M14 3.5v2.5"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  home:'<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
+  shirt:'<path d="M8.5 4L3 7l2 4.5 3-1.2V20h8v-9.7l3 1.2L21 7l-5.5-3a3.6 3.6 0 0 1-7 0z"/>',
+  sofa:'<path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><path d="M3 13a2 2 0 0 1 4 0v1h10v-1a2 2 0 0 1 4 0v5H3v-5zM5 18v2M19 18v2"/>',
+  heart:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5l3.8 2.8-1.4 4.4H9.6l-1.4-4.4z"/><path d="M12 3v4.5M15.8 10.3l4.4-1.6M14.4 14.7l2.6 4M9.6 14.7L7 18.7M8.2 10.3L3.8 8.7"/>',
+  bag:'<path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/>',
+  fork:'<path d="M7 3v6a2 2 0 0 0 4 0V3M9 11v10"/><path d="M17 21V3c-2 1.2-3 4-3 8h3"/>',
+  briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+  smile:'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/>',
+  leaf:'<path d="M5 20c0-9.5 6-15 15-15 0 9.5-5.5 15-14 15"/><path d="M5 20c3.5-4.5 6.5-7.5 10.5-10"/>',
+  plane:'<path d="M2.5 12.5l6 1.5 3.5 6 2-.5-1.5-6.5 5.5-3a2 2 0 0 0-1.5-3.6L11 8.6 5 6.5l-1.8 1 4 3.6-3.4 1.4z"/>',
+  question:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  book:'<path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2V5z"/><path d="M4 20a2 2 0 0 1 2-2h13v3H6a2 2 0 0 1-2-1z"/>',
   globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.3 3 14.7 0 18M12 3c-3 3.3-3 14.7 0 18"/>',
 };
 const ic = (n, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
+/* Poly, der Papagei: begleitet dich durch die App */
+function mascot(mood='happy', size=80){
+  const eye = mood==='sad' ? '<path d="M37 31q5-4 10 0" stroke="#152836" stroke-width="3" fill="none" stroke-linecap="round"/>'
+    : mood==='wow' ? '<circle cx="42" cy="29" r="5.4" fill="#152836"/><circle cx="43.8" cy="27.2" r="1.8" fill="#fff"/>'
+    : '<circle cx="42" cy="29.5" r="4.4" fill="#152836"/><circle cx="43.5" cy="28" r="1.5" fill="#fff"/>';
+  const beak = mood==='wow' ? '<path d="M51 27 Q64 28 58 37 Q55 33 51 33Z" fill="var(--gold)"/><path d="M51 35 Q57 36 56 42 Q53 39 50 38Z" fill="color-mix(in srgb,var(--gold) 70%,#000)"/>' : '<path d="M51 27 Q65 29 56 41 Q55 35 50 34Z" fill="var(--gold)"/>';
+  return `<svg class="poly" width="${size}" height="${size}" viewBox="0 0 80 80" aria-hidden="true">
+    <path d="M31 70l-4 8M39 71l-1 8" stroke="var(--gold)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M24 60 Q12 72 9 79 Q22 75 31 66Z" fill="var(--sea)"/>
+    <ellipse cx="38" cy="49" rx="21" ry="23" fill="var(--accent)"/>
+    <ellipse cx="42" cy="55" rx="11.5" ry="13.5" fill="var(--gold-soft)"/>
+    <circle cx="39" cy="28" r="17" fill="var(--accent)"/>
+    <path d="M28 15 Q31 2 38 10 Q42 -1 47 12" fill="var(--gold)"/>
+    <path d="M22 44 Q13 60 25 67 Q32 56 30 43Z" fill="var(--accent-deep)"/>
+    ${eye}${beak}
+    ${mood!=='sad'?'<circle cx="33" cy="36" r="3.2" fill="#FF9AA8" opacity=".55"/>':''}
+  </svg>`;
+}
 const starSvg = on => `<svg viewBox="0 0 24 24" class="${on?'on':''}"><path d="${ICONS.star.match(/d="([^"]+)"/)[1]}"/></svg>`;
 
 /* ================= Sprachen & Inhalte ================= */
@@ -349,6 +409,261 @@ const TGT = {
   u6:{w:['la casa','il lavoro','il colore','il computer','dormire','mangiare','imparare','parlare'], s:['Imparo ogni giorno./Studio ogni giorno.',"Parlo un po'./Parlo un poco.",'Lavoro in ufficio.','Il mio colore preferito è il blu./Il mio colore preferito è blu.']},
  },
 };
+/* Weitere Stationen. Zeile: "Deutsch|Englisch|Spanisch|Französisch|Italienisch". "/" = Alternativen, {uk:…} = landestypische Variante */
+const MORE = [
+ {id:'u7', title:'Kleidung & Farben', icon:'shirt', w:[
+  "das Hemd|the shirt/shirt|la camisa|la chemise|la camicia",
+  "die Hose|the pants/pants{uk:the trousers/trousers}|los pantalones|le pantalon|i pantaloni",
+  "der Schuh|the shoe/shoe|el zapato|la chaussure|la scarpa",
+  "die Jacke|the jacket/jacket|la chaqueta{mx:la chamarra/la chaqueta}|la veste|la giacca",
+  "das Kleid|the dress/dress|el vestido|la robe|il vestito/l'abito",
+  "rot|red|rojo/roja|rouge|rosso/rossa",
+  "blau|blue|azul|bleu/bleue|blu",
+  "grün|green|verde|vert/verte|verde",
+  "schwarz|black|negro/negra|noir/noire|nero/nera",
+  "weiß|white|blanco/blanca|blanc/blanche|bianco/bianca",
+  "groß|big/large|grande|grand/grande|grande",
+  "klein|small/little|pequeño/pequeña|petit/petite|piccolo/piccola"], s:[
+  "Ich suche eine Jacke.|I'm looking for a jacket./I am looking for a jacket.|Busco una chaqueta.{mx:Busco una chamarra./Busco una chaqueta.}|Je cherche une veste.|Cerco una giacca.",
+  "Das Kleid ist rot.|The dress is red.|El vestido es rojo.|La robe est rouge.|Il vestito è rosso.",
+  "Haben Sie das in Blau?|Do you have this in blue?/Do you have it in blue?|¿Lo tiene en azul?|Vous l'avez en bleu ?|Ce l'ha in blu?",
+  "Die Schuhe sind zu klein.|The shoes are too small.|Los zapatos son demasiado pequeños./Los zapatos son muy pequeños.|Les chaussures sont trop petites.|Le scarpe sono troppo piccole."]},
+ {id:'u8', title:'Wohnen', icon:'sofa', w:[
+  "die Küche|the kitchen/kitchen|la cocina|la cuisine|la cucina",
+  "das Zimmer|the room/room|la habitación{mx:el cuarto/la habitación}|la chambre/la pièce|la camera/la stanza",
+  "das Bad|the bathroom/bathroom|el baño|la salle de bain/la salle de bains|il bagno",
+  "das Bett|the bed/bed|la cama|le lit|il letto",
+  "der Tisch|the table/table|la mesa|la table|il tavolo",
+  "der Stuhl|the chair/chair|la silla|la chaise|la sedia",
+  "die Tür|the door/door|la puerta|la porte|la porta",
+  "das Fenster|the window/window|la ventana|la fenêtre|la finestra",
+  "die Wohnung|the apartment/apartment{uk:the flat/flat/the apartment/apartment}|el piso/el apartamento{mx:el departamento/el apartamento}|l'appartement|l'appartamento",
+  "der Schlüssel|the key/key|la llave|la clé/la clef|la chiave",
+  "der Garten|the yard/yard/the garden/garden{uk:the garden/garden}|el jardín|le jardin|il giardino",
+  "die Lampe|the lamp/lamp|la lámpara|la lampe|la lampada"], s:[
+  "Meine Wohnung ist klein.|My apartment is small.{uk:My flat is small./My apartment is small.}|Mi piso es pequeño./Mi apartamento es pequeño.{mx:Mi departamento es pequeño./Mi apartamento es pequeño.}|Mon appartement est petit.|Il mio appartamento è piccolo.",
+  "Die Küche ist sehr schön.|The kitchen is very nice./The kitchen is very beautiful.|La cocina es muy bonita.|La cuisine est très belle.|La cucina è molto bella.",
+  "Wo ist das Bad?|Where is the bathroom?|¿Dónde está el baño?|Où est la salle de bain ?/Où est la salle de bains ?|Dov'è il bagno?/Dove è il bagno?",
+  "Ich habe meinen Schlüssel vergessen.|I forgot my key./I have forgotten my key.|He olvidado mi llave./Olvidé mi llave.{mx:Olvidé mi llave./Se me olvidó la llave.}|J'ai oublié ma clé.|Ho dimenticato la mia chiave./Ho dimenticato la chiave."]},
+ {id:'u9', title:'Körper & Gesundheit', icon:'heart', w:[
+  "der Kopf|the head/head|la cabeza|la tête|la testa",
+  "die Hand|the hand/hand|la mano|la main|la mano",
+  "der Fuß|the foot/foot|el pie|le pied|il piede",
+  "das Auge|the eye/eye|el ojo|l'œil|l'occhio",
+  "der Bauch|the stomach/the belly/stomach/belly|el estómago/la barriga/la panza|le ventre/l'estomac|la pancia/lo stomaco",
+  "der Arzt|the doctor/doctor|el médico/el doctor|le médecin/le docteur|il medico/il dottore",
+  "die Apotheke|the pharmacy/pharmacy{uk:the chemist's/the pharmacy/pharmacy}|la farmacia|la pharmacie|la farmacia",
+  "krank|sick/ill{uk:ill/sick}|enfermo/enferma|malade|malato/malata",
+  "müde|tired|cansado/cansada|fatigué/fatiguée|stanco/stanca",
+  "der Schmerz|the pain/pain|el dolor|la douleur|il dolore",
+  "das Fieber|the fever/fever{uk:a temperature/the fever/fever}|la fiebre|la fièvre|la febbre",
+  "die Tablette|the pill/the tablet/pill/tablet|la pastilla|le comprimé/le cachet|la pastiglia/la compressa"], s:[
+  "Ich habe Kopfschmerzen.|I have a headache./I've got a headache.|Me duele la cabeza./Tengo dolor de cabeza.|J'ai mal à la tête.|Ho mal di testa.",
+  "Ich brauche einen Arzt.|I need a doctor.|Necesito un médico./Necesito un doctor.|J'ai besoin d'un médecin.|Ho bisogno di un medico./Ho bisogno di un dottore.",
+  "Wo ist die nächste Apotheke?|Where is the nearest pharmacy?{uk:Where is the nearest chemist?/Where is the nearest pharmacy?}|¿Dónde está la farmacia más cercana?|Où est la pharmacie la plus proche ?|Dov'è la farmacia più vicina?",
+  "Mir geht es nicht gut.|I don't feel well./I'm not feeling well./I do not feel well.|No me siento bien./No estoy bien.|Je ne me sens pas bien./Ça ne va pas.|Non mi sento bene./Non sto bene."]},
+ {id:'u10', title:'Wetter & Jahreszeiten', icon:'sun', w:[
+  "die Sonne|the sun/sun|el sol|le soleil|il sole",
+  "der Regen|the rain/rain|la lluvia|la pluie|la pioggia",
+  "der Schnee|the snow/snow|la nieve|la neige|la neve",
+  "der Wind|the wind/wind|el viento|le vent|il vento",
+  "warm|warm|cálido/caluroso|chaud/chaude|caldo/calda",
+  "kalt|cold|frío/fría|froid/froide|freddo/fredda",
+  "der Sommer|the summer/summer|el verano|l'été|l'estate",
+  "der Winter|the winter/winter|el invierno|l'hiver|l'inverno",
+  "der Frühling|the spring/spring|la primavera|le printemps|la primavera",
+  "der Herbst|the fall/fall/the autumn/autumn{uk:the autumn/autumn}|el otoño|l'automne|l'autunno",
+  "das Wetter|the weather/weather|el tiempo/el clima{mx:el clima/el tiempo}|le temps/la météo|il tempo/il meteo",
+  "die Wolke|the cloud/cloud|la nube|le nuage|la nuvola"], s:[
+  "Wie ist das Wetter heute?|What's the weather like today?/What is the weather like today?/How is the weather today?|¿Qué tiempo hace hoy?{mx:¿Cómo está el clima hoy?/¿Qué tiempo hace hoy?}|Quel temps fait-il aujourd'hui ?|Che tempo fa oggi?",
+  "Es regnet.|It's raining./It is raining.|Está lloviendo./Llueve.|Il pleut.|Piove./Sta piovendo.",
+  "Heute ist es sehr kalt.|It's very cold today./It is very cold today./Today it's very cold.|Hoy hace mucho frío.|Il fait très froid aujourd'hui./Aujourd'hui, il fait très froid.|Oggi fa molto freddo.",
+  "Die Sonne scheint.|The sun is shining.|Hace sol./Brilla el sol.|Il fait soleil./Le soleil brille.|C'è il sole./Il sole splende."]},
+ {id:'u11', title:'Hobbys & Freizeit', icon:'ball', w:[
+  "das Buch|the book/book|el libro|le livre|il libro",
+  "der Film|the movie/movie/the film/film{uk:the film/film/the movie/movie}|la película|le film|il film",
+  "die Musik|the music/music|la música|la musique|la musica",
+  "der Sport|the sport/sport/sports|el deporte|le sport|lo sport",
+  "das Spiel|the game/game|el juego/el partido|le jeu/le match|il gioco/la partita",
+  "schwimmen|to swim/swim|nadar|nager|nuotare",
+  "tanzen|to dance/dance|bailar|danser|ballare",
+  "lesen|to read/read|leer|lire|leggere",
+  "spielen|to play/play|jugar/tocar|jouer|giocare/suonare",
+  "singen|to sing/sing|cantar|chanter|cantare",
+  "kochen|to cook/cook|cocinar|cuisiner/faire la cuisine|cucinare",
+  "der Strand|the beach/beach|la playa|la plage|la spiaggia"], s:[
+  "Ich lese gern.|I like reading./I like to read./I enjoy reading.|Me gusta leer.|J'aime lire.|Mi piace leggere.",
+  "Spielst du Fußball?|Do you play soccer?/Do you play football?{uk:Do you play football?}|¿Juegas al fútbol?{mx:¿Juegas futbol?/¿Juegas fútbol?/¿Juegas al fútbol?}|Tu joues au foot ?/Tu joues au football ?/Joues-tu au football ?{ca:Tu joues au soccer ?/Tu joues au football ?}|Giochi a calcio?/Giochi a pallone?",
+  "Was machst du am Wochenende?|What are you doing on the weekend?/What do you do on the weekend?/What are you doing this weekend?{uk:What are you doing at the weekend?/What are you doing this weekend?/What do you do at the weekend?}|¿Qué haces el fin de semana?|Qu'est-ce que tu fais le week-end ?/Que fais-tu ce week-end ?{ca:Qu'est-ce que tu fais en fin de semaine ?/Qu'est-ce que tu fais le week-end ?}|Cosa fai nel fine settimana?/Che fai nel weekend?/Cosa fai questo fine settimana?",
+  "Wir gehen ins Kino.|We're going to the movies./We are going to the movies./We're going to the cinema.{uk:We're going to the cinema./We are going to the cinema.}|Vamos al cine.|On va au cinéma./Nous allons au cinéma.|Andiamo al cinema."]},
+ {id:'u12', title:'Einkaufen', icon:'bag', w:[
+  "der Laden|the store/store/the shop/shop{uk:the shop/shop}|la tienda|le magasin|il negozio",
+  "der Supermarkt|the supermarket/supermarket|el supermercado|le supermarché|il supermercato",
+  "der Preis|the price/price|el precio|le prix|il prezzo",
+  "das Geld|the money/money|el dinero|l'argent|i soldi/il denaro",
+  "teuer|expensive|caro/cara|cher/chère|caro/cara",
+  "billig|cheap|barato/barata|bon marché/pas cher|economico/a buon mercato",
+  "kaufen|to buy/buy|comprar|acheter|comprare",
+  "bezahlen|to pay/pay|pagar|payer|pagare",
+  "die Kasse|the checkout/checkout/the register{uk:the till/the checkout/checkout}|la caja|la caisse|la cassa",
+  "die Tüte|the bag/bag|la bolsa|le sac|il sacchetto/la busta",
+  "die Größe|the size/size|la talla|la taille|la taglia",
+  "offen|open|abierto/abierta|ouvert/ouverte|aperto/aperta"], s:[
+  "Kann ich mit Karte bezahlen?|Can I pay by card?/Can I pay with a card?/Can I pay with card?|¿Puedo pagar con tarjeta?|Je peux payer par carte ?/Est-ce que je peux payer par carte ?/Puis-je payer par carte ?|Posso pagare con la carta?/Posso pagare con carta?",
+  "Das ist zu teuer.|That's too expensive./That is too expensive./It's too expensive.|Es demasiado caro./Es muy caro.|C'est trop cher.|È troppo caro.",
+  "Ich nehme das.|I'll take it./I'll take this./I will take it.|Me lo llevo.|Je le prends.|Lo prendo.",
+  "Wann öffnet der Laden?|When does the store open?{uk:When does the shop open?}|¿A qué hora abre la tienda?/¿Cuándo abre la tienda?|Quand le magasin ouvre-t-il ?/Le magasin ouvre quand ?/À quelle heure ouvre le magasin ?|Quando apre il negozio?/A che ora apre il negozio?"]},
+ {id:'u13', title:'Im Restaurant', icon:'fork', w:[
+  "die Speisekarte|the menu/menu|la carta/el menú|la carte/le menu|il menù/il menu",
+  "das Fleisch|the meat/meat|la carne|la viande|la carne",
+  "der Fisch|the fish/fish|el pescado|le poisson|il pesce",
+  "das Gemüse|the vegetables/vegetables|las verduras/la verdura|les légumes|la verdura/le verdure",
+  "der Salat|the salad/salad|la ensalada|la salade|l'insalata",
+  "die Suppe|the soup/soup|la sopa|la soupe|la zuppa/la minestra",
+  "der Nachtisch|the dessert/dessert{uk:the dessert/dessert/the pudding/pudding}|el postre|le dessert|il dolce/il dessert",
+  "das Glas|the glass/glass|el vaso/la copa|le verre|il bicchiere",
+  "der Wein|the wine/wine|el vino|le vin|il vino",
+  "das Bier|the beer/beer|la cerveza|la bière|la birra",
+  "der Kellner|the waiter/waiter|el camarero{mx:el mesero}|le serveur|il cameriere",
+  "lecker|delicious/tasty|rico/delicioso|délicieux/bon|buono/delizioso"], s:[
+  "Einen Tisch für zwei, bitte.|A table for two, please.|Una mesa para dos, por favor.|Une table pour deux, s'il vous plaît.|Un tavolo per due, per favore.",
+  "Ich bin Vegetarier.|I'm a vegetarian./I am a vegetarian./I'm vegetarian.|Soy vegetariano./Soy vegetariana.|Je suis végétarien./Je suis végétarienne.|Sono vegetariano./Sono vegetariana.",
+  "Was empfehlen Sie?|What do you recommend?/What would you recommend?|¿Qué me recomienda?/¿Qué recomienda?|Qu'est-ce que vous recommandez ?/Que recommandez-vous ?|Cosa mi consiglia?/Cosa consiglia?",
+  "Noch ein Wasser, bitte.|Another water, please./One more water, please.|Otra agua, por favor.|Encore une eau, s'il vous plaît./Une autre eau, s'il vous plaît.|Un'altra acqua, per favore."]},
+ {id:'u14', title:'Arbeit & Schule', icon:'briefcase', w:[
+  "der Lehrer|the teacher/teacher|el profesor/el maestro|le professeur/le prof|l'insegnante/il professore/il maestro",
+  "der Schüler|the student/student/the pupil/pupil|el alumno/el estudiante|l'élève|lo studente/l'alunno",
+  "die Schule|the school/school|la escuela/el colegio|l'école|la scuola",
+  "das Büro|the office/office|la oficina|le bureau|l'ufficio",
+  "der Chef|the boss/boss|el jefe|le patron/le chef|il capo",
+  "die Firma|the company/company|la empresa|l'entreprise/la société|l'azienda/la ditta",
+  "die Besprechung|the meeting/meeting|la reunión|la réunion|la riunione",
+  "die Aufgabe|the task/task|la tarea|la tâche|il compito",
+  "die Pause|the break/break|el descanso/la pausa|la pause|la pausa",
+  "der Kollege|the colleague/colleague/the coworker/coworker|el compañero de trabajo/el colega|le collègue|il collega",
+  "schreiben|to write/write|escribir|écrire|scrivere",
+  "arbeiten|to work/work|trabajar|travailler|lavorare"], s:[
+  "Ich bin Student.|I'm a student./I am a student.|Soy estudiante.|Je suis étudiant./Je suis étudiante.|Sono uno studente./Sono studente./Sono una studentessa.",
+  "Was machst du beruflich?|What do you do for a living?/What do you do?/What's your job?|¿A qué te dedicas?/¿En qué trabajas?|Qu'est-ce que tu fais dans la vie ?/Tu fais quoi dans la vie ?|Che lavoro fai?/Cosa fai nella vita?",
+  "Ich habe heute eine Besprechung.|I have a meeting today./I've got a meeting today.|Hoy tengo una reunión./Tengo una reunión hoy.|J'ai une réunion aujourd'hui.|Oggi ho una riunione./Ho una riunione oggi.",
+  "Ich arbeite von zu Hause.|I work from home.|Trabajo desde casa.|Je travaille de chez moi./Je travaille à la maison./Je fais du télétravail.|Lavoro da casa."]},
+ {id:'u15', title:'Gefühle', icon:'smile', w:[
+  "glücklich|happy|feliz|heureux/heureuse|felice",
+  "traurig|sad|triste|triste|triste",
+  "wütend|angry/mad|enfadado/enfadada/enojado/enojada{mx:enojado/enojada}|en colère/fâché/fâchée|arrabbiato/arrabbiata",
+  "nervös|nervous|nervioso/nerviosa|nerveux/nerveuse|nervoso/nervosa",
+  "ruhig|calm/quiet|tranquilo/tranquila|calme|calmo/calma/tranquillo",
+  "die Liebe|the love/love|el amor|l'amour|l'amore",
+  "die Angst|the fear/fear|el miedo|la peur|la paura",
+  "lachen|to laugh/laugh|reír/reírse|rire|ridere",
+  "weinen|to cry/cry|llorar|pleurer|piangere",
+  "froh|glad|contento/contenta|content/contente|contento/contenta",
+  "gelangweilt|bored|aburrido/aburrida|ennuyé/ennuyée|annoiato/annoiata",
+  "überrascht|surprised|sorprendido/sorprendida|surpris/surprise|sorpreso/sorpresa"], s:[
+  "Ich bin sehr glücklich.|I'm very happy./I am very happy.|Estoy muy feliz./Soy muy feliz.|Je suis très heureux./Je suis très heureuse.|Sono molto felice.",
+  "Warum bist du traurig?|Why are you sad?|¿Por qué estás triste?|Pourquoi tu es triste ?/Pourquoi es-tu triste ?|Perché sei triste?",
+  "Ich habe Angst.|I'm scared./I am scared./I'm afraid./I am afraid.|Tengo miedo.|J'ai peur.|Ho paura.",
+  "Ich liebe dich.|I love you.|Te quiero./Te amo.|Je t'aime.|Ti amo./Ti voglio bene."]},
+ {id:'u16', title:'Tiere & Natur', icon:'leaf', w:[
+  "der Hund|the dog/dog|el perro|le chien|il cane",
+  "die Katze|the cat/cat|el gato|le chat|il gatto",
+  "der Vogel|the bird/bird|el pájaro/el ave|l'oiseau|l'uccello",
+  "das Pferd|the horse/horse|el caballo|le cheval|il cavallo",
+  "die Kuh|the cow/cow|la vaca|la vache|la mucca",
+  "der Baum|the tree/tree|el árbol|l'arbre|l'albero",
+  "die Blume|the flower/flower|la flor|la fleur|il fiore",
+  "der Berg|the mountain/mountain|la montaña|la montagne|la montagna",
+  "das Meer|the sea/sea/the ocean/ocean|el mar|la mer|il mare",
+  "der See|the lake/lake|el lago|le lac|il lago",
+  "der Wald|the forest/forest/the woods/woods|el bosque|la forêt|il bosco/la foresta",
+  "der Fluss|the river/river|el río|la rivière/le fleuve|il fiume"], s:[
+  "Ich habe einen Hund.|I have a dog./I've got a dog.|Tengo un perro.|J'ai un chien.|Ho un cane.",
+  "Die Katze schläft.|The cat is sleeping./The cat sleeps.|El gato duerme./El gato está durmiendo.|Le chat dort.|Il gatto dorme./Il gatto sta dormendo.",
+  "Wir gehen in den Bergen wandern.|We're going hiking in the mountains./We are going hiking in the mountains./We go hiking in the mountains.|Vamos de excursión a la montaña./Vamos a hacer senderismo en la montaña.|On va faire de la randonnée à la montagne./Nous allons faire de la randonnée en montagne./On va randonner en montagne.|Andiamo a fare un'escursione in montagna./Facciamo trekking in montagna.",
+  "Das Meer ist wunderschön.|The sea is beautiful./The ocean is beautiful.|El mar es precioso./El mar es muy bonito./El mar es hermoso.|La mer est magnifique./La mer est très belle.|Il mare è bellissimo./Il mare è stupendo."]},
+ {id:'u17', title:'Reisen & Urlaub', icon:'plane', w:[
+  "der Flughafen|the airport/airport|el aeropuerto|l'aéroport|l'aeroporto",
+  "das Flugzeug|the plane/plane/the airplane/airplane{uk:the plane/plane/the aeroplane/aeroplane}|el avión|l'avion|l'aereo",
+  "der Koffer|the suitcase/suitcase|la maleta|la valise|la valigia",
+  "der Reisepass|the passport/passport|el pasaporte|le passeport|il passaporto",
+  "der Urlaub|the vacation/vacation/the holiday/holiday{uk:the holiday/holiday/the holidays/holidays}|las vacaciones|les vacances|le vacanze/la vacanza",
+  "die Reservierung|the reservation/reservation/the booking/booking|la reserva{mx:la reservación/la reserva}|la réservation|la prenotazione",
+  "die Landkarte|the map/map|el mapa|la carte/le plan|la mappa/la cartina",
+  "der Bus|the bus/bus|el autobús{mx:el camión/el autobús}|le bus/l'autobus|l'autobus/il pullman",
+  "die Abfahrt|the departure/departure|la salida|le départ|la partenza",
+  "die Ankunft|the arrival/arrival|la llegada|l'arrivée|l'arrivo",
+  "das Gepäck|the luggage/luggage/the baggage/baggage|el equipaje|les bagages|i bagagli/il bagaglio",
+  "die Stadt|the city/city/the town/town|la ciudad|la ville|la città"], s:[
+  "Ich habe ein Zimmer reserviert.|I have booked a room./I booked a room./I reserved a room./I have reserved a room.|He reservado una habitación./Tengo una habitación reservada.{mx:Reservé una habitación./Tengo una habitación reservada./Tengo una reservación.}|J'ai réservé une chambre.|Ho prenotato una camera.",
+  "Wann fährt der Bus ab?|When does the bus leave?/When does the bus depart?|¿Cuándo sale el autobús?/¿A qué hora sale el autobús?{mx:¿A qué hora sale el camión?/¿A qué hora sale el autobús?/¿Cuándo sale el autobús?}|Quand part le bus ?/À quelle heure part le bus ?/Le bus part quand ?|Quando parte l'autobus?/A che ora parte l'autobus?",
+  "Wir machen Urlaub in Spanien.|We're on vacation in Spain./We are on vacation in Spain./We're going on vacation to Spain.{uk:We're on holiday in Spain./We are on holiday in Spain./We're going on holiday to Spain.}|Estamos de vacaciones en España./Vamos de vacaciones a España.|Nous sommes en vacances en Espagne./On est en vacances en Espagne./On part en vacances en Espagne.|Siamo in vacanza in Spagna./Andiamo in vacanza in Spagna.",
+  "Mein Koffer ist weg.|My suitcase is gone./My suitcase is lost./My luggage is lost.|He perdido mi maleta./Mi maleta ha desaparecido./No encuentro mi maleta.{mx:Se perdió mi maleta./Perdí mi maleta./No encuentro mi maleta.}|Ma valise a disparu./J'ai perdu ma valise.|La mia valigia è sparita./Ho perso la valigia./Ho perso la mia valigia."]},
+ {id:'u18', title:'Wichtige Verben', icon:'bolt', w:[
+  "sein|to be/be|ser/estar|être|essere",
+  "haben|to have/have|tener/haber|avoir|avere",
+  "gehen|to go/go|ir|aller|andare",
+  "kommen|to come/come|venir|venir|venire",
+  "machen|to do/to make/do/make|hacer|faire|fare",
+  "sehen|to see/see|ver|voir|vedere",
+  "wissen|to know/know|saber|savoir|sapere",
+  "wollen|to want/want|querer|vouloir|volere",
+  "können|can/to be able to/be able to|poder|pouvoir|potere",
+  "geben|to give/give|dar|donner|dare",
+  "nehmen|to take/take|tomar/coger{mx:tomar/agarrar}|prendre|prendere",
+  "verstehen|to understand/understand|entender/comprender|comprendre|capire"], s:[
+  "Ich verstehe nicht.|I don't understand./I do not understand.|No entiendo./No comprendo.|Je ne comprends pas.|Non capisco.",
+  "Kannst du mir helfen?|Can you help me?/Could you help me?|¿Puedes ayudarme?/¿Me puedes ayudar?|Tu peux m'aider ?/Peux-tu m'aider ?/Est-ce que tu peux m'aider ?|Puoi aiutarmi?/Mi puoi aiutare?",
+  "Ich will nach Hause gehen.|I want to go home.|Quiero ir a casa./Quiero irme a casa.|Je veux rentrer à la maison./Je veux rentrer chez moi./Je veux aller à la maison.|Voglio andare a casa./Voglio tornare a casa.",
+  "Weißt du, wo er ist?|Do you know where he is?|¿Sabes dónde está?|Tu sais où il est ?/Sais-tu où il est ?|Sai dov'è?/Sai dove è?/Sai dove si trova?"]},
+ {id:'u19', title:'Fragen stellen', icon:'question', w:[
+  "wer|who|quién|qui|chi",
+  "was|what|qué|quoi/que|cosa/che cosa/che",
+  "wo|where|dónde|où|dove",
+  "wann|when|cuándo|quand|quando",
+  "warum|why|por qué|pourquoi|perché",
+  "wie|how|cómo|comment|come",
+  "wie viel|how much/how many|cuánto/cuánta|combien|quanto/quanta",
+  "welcher|which|cuál|quel/quelle|quale",
+  "woher|where from|de dónde|d'où|da dove/di dove",
+  "vielleicht|maybe/perhaps|quizás/tal vez/quizá|peut-être|forse",
+  "natürlich|of course/naturally|claro/por supuesto|bien sûr/évidemment|certo/naturalmente",
+  "Entschuldigung|excuse me/sorry|perdón/disculpe/perdone|excusez-moi/pardon|scusi/scusa/mi scusi"], s:[
+  "Sprechen Sie Deutsch?|Do you speak German?|¿Habla alemán?/¿Habla usted alemán?|Vous parlez allemand ?/Parlez-vous allemand ?|Parla tedesco?/Lei parla tedesco?",
+  "Können Sie das wiederholen?|Can you repeat that?/Could you repeat that?|¿Puede repetirlo?/¿Puede repetir eso?/¿Me lo puede repetir?|Vous pouvez répéter ?/Pouvez-vous répéter ?|Può ripetere?/Può ripeterlo?",
+  "Was bedeutet das?|What does that mean?/What does this mean?|¿Qué significa eso?/¿Qué significa esto?/¿Qué quiere decir eso?|Qu'est-ce que ça veut dire ?/Ça veut dire quoi ?/Que signifie ceci ?|Cosa significa?/Che cosa vuol dire?/Cosa vuol dire?",
+  "Bitte langsamer.|Slower, please./More slowly, please./Please speak more slowly.|Más despacio, por favor.|Plus lentement, s'il vous plaît.|Più lentamente, per favore./Più piano, per favore."]},
+ {id:'u20', title:'Tage & Zeit', icon:'calendar', w:[
+  "Montag|Monday|el lunes/lunes|lundi/le lundi|lunedì/il lunedì",
+  "Dienstag|Tuesday|el martes/martes|mardi|martedì",
+  "Mittwoch|Wednesday|el miércoles/miércoles|mercredi|mercoledì",
+  "Donnerstag|Thursday|el jueves/jueves|jeudi|giovedì",
+  "Freitag|Friday|el viernes/viernes|vendredi|venerdì",
+  "Samstag|Saturday|el sábado/sábado|samedi|sabato",
+  "Sonntag|Sunday|el domingo/domingo|dimanche|domenica",
+  "gestern|yesterday|ayer|hier|ieri",
+  "der Monat|the month/month|el mes|le mois|il mese",
+  "das Jahr|the year/year|el año|l'année/l'an|l'anno",
+  "immer|always|siempre|toujours|sempre",
+  "nie|never|nunca/jamás|jamais|mai"], s:[
+  "Heute ist Montag.|Today is Monday./It's Monday today.|Hoy es lunes.|Aujourd'hui, c'est lundi./On est lundi aujourd'hui.|Oggi è lunedì.",
+  "Am Wochenende habe ich frei.|I'm off on the weekend./I have the weekend off./I'm free on the weekend.{uk:I'm off at the weekend./I have the weekend off./I'm free at the weekend.}|El fin de semana estoy libre./Tengo libre el fin de semana.|Le week-end, je suis libre./Je ne travaille pas le week-end.{ca:La fin de semaine, je suis libre./Le week-end, je suis libre.}|Nel fine settimana sono libero./Il fine settimana sono libero./Nel weekend sono libero.",
+  "Ich komme immer zu spät.|I'm always late./I am always late./I always come too late.|Siempre llego tarde.|J'arrive toujours en retard./Je suis toujours en retard.|Arrivo sempre in ritardo./Sono sempre in ritardo.",
+  "Wir sehen uns am Freitag.|See you on Friday./See you Friday./We'll see each other on Friday.|Nos vemos el viernes.|On se voit vendredi./À vendredi !|Ci vediamo venerdì."]},
+];
+['wave','people','cup','clock','compass','home'].forEach((n,i)=>UNITS[i].icon=n);
+function parseSeg(seg, lang){
+  const vars={}; const base=String(seg).replace(/\{(\w+):([^}]*)\}/g,(_,v,x)=>{ vars[v]=x.trim(); return '' }).trim();
+  return Object.keys(vars).length ? {[LANGS[lang].def]:base, ...vars} : base;
+}
+for(const u of MORE){
+  const w=u.w.map(r=>r.split('|')), s=u.s.map(r=>r.split('|'));
+  [...w,...s].forEach(r=>{ if(r.length!==5) console.error('Polyglo: Zeile unvollständig', r) });
+  UNITS.push({id:u.id, title:u.title, icon:u.icon, w:w.map(r=>r[0]), s:s.map(r=>r[0])});
+  ['en','es','fr','it'].forEach((k,ki)=>{ TGT[k][u.id]={w:w.map(r=>parseSeg(r[ki+1],k)), s:s.map(r=>parseSeg(r[ki+1],k))} });
+}
+/* KI-Pfad: diese Themen erstellt die KI der Reihe nach, wenn du dort ankommst */
+const CURRICULUM=[['Smalltalk','A2'],['Telefonieren','A2'],['Termine vereinbaren','A2'],['Von gestern erzählen','A2'],['Pläne & Zukunft','A2'],['Wohnung suchen','A2'],['Beim Arzt','A2'],['Bank & Post','A2'],['Feste & Feiern','A2'],['Technik & Internet','B1'],['Meinung sagen','B1'],['Beziehungen','B1'],['Job & Bewerbung','B1'],['Nachrichten & Medien','B1'],['Umwelt & Klima','B1'],['Kultur & Kunst','B1'],['Behörden & Formulare','B1'],['Kochen & Rezepte','B1'],['Notfälle','B1'],['Geschichten erzählen','B1'],['Diskutieren','B2'],['Redewendungen','B2'],['Wirtschaft & Geld','B2'],['Gesellschaft','B2'],['Wissenschaft','B2'],['Politik','B2'],['Humor & Wortspiele','B2'],['Literatur','B2']];
+
 const NUMS = {en:{0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine',10:'ten'}, es:{0:'cero',1:'uno',2:'dos',3:'tres',4:'cuatro',5:'cinco',6:'seis',7:'siete',8:'ocho',9:'nueve',10:'diez'}, fr:{0:'zéro',1:'un',2:'deux',3:'trois',4:'quatre',5:'cinq',6:'six',7:'sept',8:'huit',9:'neuf',10:'dix'}, it:{0:'zero',1:'uno',2:'due',3:'tre',4:'quattro',5:'cinque',6:'sei',7:'sette',8:'otto',9:'nove',10:'dieci'}};
 const ARTICLES = {en:/^(the|a|an|to)\s+/, es:/^(el|la|los|las|un|una|a la|al)\s+/, fr:/^(le|la|les|un|une|à)\s+|^l'/, it:/^(il|lo|la|i|gli|le|un|una|uno|a)\s+|^(l'|un')/};
 
@@ -392,7 +707,7 @@ function diffMark(answer, target){
 
 /* ================= Zustand & Speichern ================= */
 const LS_KEY='plapperpfad.v1';
-const fresh = () => ({v:1, updatedAt:0, lang:null, variants:{}, xp:0, days:{}, streak:0, lastDay:null, goal:50, sound:true, rate:1, voice:'claude', badges:{}, stats:{lessons:0,speakGood:0,speakPerfect:0,talkTurns:0,writesOk:0,perfectLessons:0}, langs:{}});
+const fresh = () => ({v:1, updatedAt:0, lang:null, variants:{}, xp:0, days:{}, streak:0, lastDay:null, goal:50, sound:true, rate:1, voice:'claude', mode:'speak', badges:{}, stats:{lessons:0,speakGood:0,speakPerfect:0,talkTurns:0,writesOk:0,perfectLessons:0}, langs:{}});
 let S = fresh();
 function loadLocal(){ try{ const j=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(j&&j.v) S=Object.assign(fresh(),j) }catch{} }
 const cloud = {ref:null, status:'lokal', timer:null, last:''};
@@ -419,15 +734,18 @@ async function connectCloud(){
     pushCloud();
   }catch{}
 }
-const L = () => { const l=S.lang; if(!S.langs[l]) S.langs[l]={st:{}, items:{}, custom:[]}; return S.langs[l] };
+const L = () => { const l=S.lang; const o=S.langs[l]||(S.langs[l]={st:{}, items:{}, custom:[], cur:[]}); o.custom=o.custom||[]; o.cur=o.cur||[]; return o };
 const variant = (lang=S.lang) => S.variants[lang] || LANGS[lang].def;
 const locale = (lang=S.lang) => LANGS[lang].variants[variant(lang)].loc;
 const variantName = (lang=S.lang) => LANGS[lang].variants[variant(lang)].name;
 
 function units(lang=S.lang){
-  const base = UNITS.map(u=>({id:u.id, title:u.title, ai:false}));
-  const custom = (S.langs[lang]?.custom||[]).map(c=>({id:c.id, title:c.title, ai:true}));
-  return [...base, ...custom];
+  const ls=S.langs[lang]||{};
+  const base=UNITS.map(u=>({id:u.id, title:u.title, icon:u.icon}));
+  const cur=(ls.cur||[]).map(c=>({id:c.id, title:c.title, icon:'book', kurr:true}));
+  const n=cur.length; if(n<CURRICULUM.length) cur.push({id:'k'+n, title:CURRICULUM[n][0], lvl:CURRICULUM[n][1], icon:'sparkle', kurr:true, placeholder:true});
+  const custom=(ls.custom||[]).map(c=>({id:c.id, title:c.title, icon:'sparkle', ai:true}));
+  return [...base, ...cur, ...custom];
 }
 function resolveT(t, lang){ if(typeof t==='string') return t; return t[variant(lang)] || t[LANGS[lang].def] || Object.values(t)[0] }
 function otherVariants(t, lang){ if(typeof t==='string') return []; return Object.entries(t).filter(([k])=>k!==variant(lang)).map(([k,v])=>({name:LANGS[lang].variants[k]?.name||k, alts:alts(v)})) }
@@ -435,7 +753,7 @@ function itemsOf(unitId, lang=S.lang){
   let de, tg;
   const u=UNITS.find(x=>x.id===unitId);
   if(u){ de=u; tg=TGT[lang][unitId] } else {
-    const c=(S.langs[lang]?.custom||[]).find(x=>x.id===unitId); if(!c) return [];
+    const c=[...(S.langs[lang]?.custom||[]), ...(S.langs[lang]?.cur||[])].find(x=>x.id===unitId); if(!c) return [];
     de={w:c.w.map(x=>x.de), s:c.s.map(x=>x.de)}; tg={w:c.w.map(x=>x.t), s:c.s.map(x=>x.t)};
   }
   const mk = (kind,i) => { const raw=tg[kind][i]; const a=alts(resolveT(raw,lang)); return {id:`${lang}:${unitId}:${kind}${i}`, kind, unit:unitId, de:de[kind][i], t:a[0], alts:a, other:otherVariants(raw,lang)} };
@@ -625,40 +943,38 @@ function render(){
 }
 
 /* ---------- Lernen: der Pfad ---------- */
+const SECTION_DEF=[
+  {title:'Grundlagen', lvl:'A1', h:'var(--accent)', ids:['u1','u2','u3','u4','u5','u6']},
+  {title:'Alltag', lvl:'A1–A2', h:'var(--sea)', ids:['u7','u8','u9','u10','u11','u12']},
+  {title:'Unterwegs im Leben', lvl:'A2', h:'var(--good)', ids:['u13','u14','u15','u16','u17','u18','u19','u20']},
+  {title:'KI-Pfad', lvl:'A2–B2', h:'var(--violet)', ids:u=>u.kurr},
+  {title:'Deine Themen', lvl:'frei gewählt', h:'var(--sea)', ids:u=>u.ai},
+];
 function renderLearn(){
   const list=units(), goalP=Math.min(100,Math.round(todayXP()/S.goal*100)), due=dueItems().length;
-  const curIdx = list.findIndex((u,i)=>unlocked(i,list) && unitStars(u.id)<3);
-  const pos = list.map((u,i)=>({x:[50,72,80,66,40,24,18,32][i%8], y:70+i*124}));
-  const h = 70 + (list.length)*124 + 40;
-  let d=`M ${pos[0].x} ${pos[0].y}`; for(let i=1;i<pos.length;i++){ const a=pos[i-1], b=pos[i]; d+=` C ${a.x} ${a.y+62}, ${b.x} ${b.y-62}, ${b.x} ${b.y}` }
-  const lastDone = list.reduce((k,u,i)=>unitStars(u.id)>=2?i:k,-1);
-  let dd=''; if(lastDone>0){ dd=`M ${pos[0].x} ${pos[0].y}`; for(let i=1;i<=lastDone;i++){ const a=pos[i-1], b=pos[i]; dd+=` C ${a.x} ${a.y+62}, ${b.x} ${b.y-62}, ${b.x} ${b.y}` } }
+  const curIdx=list.findIndex((u,i)=>!u.ai && unlocked(i,list) && unitStars(u.id)<3);
+  const hello={en:'Hello!',es:'¡Hola!',fr:'Salut !',it:'Ciao!'}[S.lang];
+  const msg = goalP>=100 ? 'Tagesziel geschafft. Ich bin stolz auf dich!' : due ? `${due} ${due===1?'Karte wartet':'Karten warten'} auf dich.` : todayXP() ? 'Schön, dass du heute dabei bist. Noch eine Runde?' : 'Bereit für ein paar Minuten Sprechen?';
+  const secs=SECTION_DEF.map(s=>({...s, items:list.map((u,gi)=>({u,gi})).filter(({u})=>typeof s.ids==='function'?s.ids(u):s.ids.includes(u.id))})).filter(s=>s.items.length);
+  const words=UNITS.reduce((n,u)=>n+u.w.length+u.s.length,0);
   app.innerHTML = topBar() + `
   <section class="stack" style="margin-top:6px">
+    <div class="herocard">${mascot(goalP>=100?'wow':'happy',84)}<div class="bubble"><span class="hi">${esc(hello)}</span>${esc(msg)}</div></div>
     <div class="card goal">
       <div class="ring" style="--p:${goalP}"><span class="tnum">${goalP}%</span></div>
       <div style="flex:1;min-width:0">
-        <div class="eyebrow">Tagesziel</div>
+        <div class="eyebrow">Tagesziel · Level ${level()}</div>
         <h2 class="tnum">${todayXP()} / ${S.goal} XP</h2>
-        <div class="muted" style="font-size:14px;font-weight:600">${goalP>=100?'Geschafft! Jeder weitere Punkt ist Bonus.':'Level '+level()+' · noch '+Math.max(0,S.goal-todayXP())+' XP bis zum Ziel'}</div>
+        <div class="muted" style="font-size:14px;font-weight:600">${Object.keys(L().items).length} von ${words} Wörtern & Sätzen gelernt, dazu der KI-Pfad</div>
       </div>
     </div>
     ${due?`<button class="card row" id="duebtn" style="text-align:left;border:2px solid var(--gold)">${ic('repeat','i gem')}<span style="flex:1"><b>${due} ${due===1?'Karte wartet':'Karten warten'} auf Wiederholung</b><br><span class="muted" style="font-size:14px">Damit nichts vergessen wird</span></span><span class="btn sm">Los</span></button>`:''}
   </section>
-  <div class="unitband"><div><div class="eyebrow">${esc(LANGS[S.lang].self)} · ${esc(variantName())}</div><h2>Deine Reise</h2></div><span class="muted tnum" style="font-weight:800">${list.reduce((n,u)=>n+unitStars(u.id),0)} / ${list.length*3} ${ic('star','i gem')}</span></div>
-  <div class="path" style="height:${h}px">
-    <svg class="road" viewBox="0 0 100 ${h}" preserveAspectRatio="none"><path class="base" d="${d}" vector-effect="non-scaling-stroke"/>${dd?`<path class="done" d="${dd}" vector-effect="non-scaling-stroke"/>`:''}<path class="dash" d="${d}" vector-effect="non-scaling-stroke"/></svg>
-    ${list.map((u,i)=>{ const st=unitStars(u.id), un=unlocked(i,list), cls=!un?'locked':st===3?'done':u.ai?'ai':'';
-      return `<div class="st" style="left:${pos[i].x}%;top:${pos[i].y}px">
-        <button class="node ${cls} ${i===curIdx?'cur':''}" data-unit="${u.id}" aria-label="Station ${i+1}: ${esc(u.title)}${un?'':' (gesperrt)'}">${i===curIdx?'<span class="start-tag">Hier weiter</span>':''}${!un?ic('lock'):st===3?ic('check'):u.ai?ic('sparkle'):i+1}</button>
-        <span class="lbl">${esc(u.title)}</span>
-        <span class="stars">${[0,1,2].map(k=>starSvg(k<st)).join('')}</span>
-      </div>` }).join('')}
-  </div>
-  <div class="card stack" style="margin-top:8px">
+  ${secs.map((s,si)=>secHTML(s,si,list,curIdx)).join('')}
+  <div class="card stack" style="margin-top:24px">
     <div class="row">${ic('sparkle','i')}<h3 style="font-size:19px">Eigene Station mit KI</h3></div>
-    <p class="muted" style="margin:0;font-size:15px">Nenne ein Thema, und die KI baut dir 8 Wörter und 4 Sätze auf ${esc(LANGS[S.lang].name)} (${esc(variantName())}).</p>
-    <div class="row" style="flex-wrap:nowrap"><input class="txt" id="aitopic" placeholder="z. B. Im Restaurant, Fußball, Arzt" maxlength="60"><button class="btn sea" id="aigen" style="flex:none">${ic('plus')}</button></div>
+    <p class="muted" style="margin:0;font-size:15px">Nenne ein Thema, und die KI baut dir 12 Wörter und 4 Sätze auf ${esc(LANGS[S.lang].name)} (${esc(variantName())}).</p>
+    <div class="row" style="flex-wrap:nowrap"><input class="txt" id="aitopic" placeholder="z. B. Fußball, Autowerkstatt, Dating" maxlength="60"><button class="btn sea" id="aigen" style="flex:none" aria-label="Station erstellen">${ic('plus')}</button></div>
     <div id="aistatus" class="muted" style="font-size:14px"></div>
   </div>`;
   wireTop();
@@ -667,22 +983,58 @@ function renderLearn(){
   $('#aigen').addEventListener('click', genUnit);
   $('#aitopic').addEventListener('keydown',e=>{ if(e.key==='Enter') genUnit() });
 }
+function secHTML(s, si, list, curIdx){
+  const X=[50,72,80,66,40,24,18,32], pos=s.items.map((_,i)=>({x:X[i%8], y:72+i*124})), h=72+(s.items.length-1)*124+96;
+  const seg=n=>{ let d=`M ${pos[0].x} ${pos[0].y}`; for(let i=1;i<=n;i++){ const a=pos[i-1], b=pos[i]; d+=` C ${a.x} ${a.y+62}, ${b.x} ${b.y-62}, ${b.x} ${b.y}` } return d };
+  const lastDone=s.items.reduce((k,{u},i)=>unitStars(u.id)>=2?i:k,-1);
+  const stars=s.items.reduce((n,{u})=>n+unitStars(u.id),0);
+  return `<div class="secband" style="--h:${s.h}"><div style="min-width:0"><div class="eyebrow">Abschnitt ${si+1} · ${esc(s.lvl)}</div><h2>${esc(s.title)}</h2></div><span class="secprog tnum">${stars}/${s.items.length*3}${starSvg(true)}</span></div>
+  <div class="path" style="height:${h}px">
+    <svg class="road" viewBox="0 0 100 ${h}" preserveAspectRatio="none"><path class="base" d="${seg(pos.length-1)}" vector-effect="non-scaling-stroke"/>${lastDone>0?`<path class="done" d="${seg(lastDone)}" vector-effect="non-scaling-stroke"/>`:''}<path class="dash" d="${seg(pos.length-1)}" vector-effect="non-scaling-stroke"/></svg>
+    ${s.items.map(({u,gi},i)=>{ const st=unitStars(u.id), un=unlocked(gi,list), done=st===3;
+      return `<div class="st" style="left:${pos[i].x}%;top:${pos[i].y}px">
+        <button class="node ${!un?'locked':done?'done':''} ${gi===curIdx?'cur':''}" style="${un&&!done?`--nc:${s.h}`:''}" data-unit="${u.id}" aria-label="Station ${gi+1}: ${esc(u.title)}${un?'':' (gesperrt)'}">${gi===curIdx?'<span class="start-tag">Hier weiter</span>':''}${!un?ic('lock'):done?ic('check'):ic(u.icon||'star')}<span class="n tnum">${gi+1}</span></button>
+        <span class="lbl">${esc(u.title)}${u.placeholder?'<small>neu · KI erstellt sie</small>':''}</span>
+        <span class="stars">${[0,1,2].map(k=>starSvg(k<st)).join('')}</span>
+      </div>` }).join('')}
+  </div>`;
+}
+async function aiMakeUnit(topic, lvl){
+  const ln=LANGS[S.lang].name, vn=variantName();
+  const known=allItems().filter(x=>x.kind==='w').map(x=>x.t).slice(0,120).join(', ');
+  const r = await cap.sample.json(`Erstelle eine Lerneinheit ${ln} (Variante ${vn}) für deutschsprachige Lernende, Niveau ${lvl||learnerLevel()}, zum Thema "${topic}".
+Genau 12 nützliche Wörter oder kurze Ausdrücke und genau 4 alltagstaugliche Sätze (höchstens 10 Wörter), passend zum Niveau.
+Vermeide diese Wörter, die die Person schon lernt: ${known}.
+Feld "t": korrekte Form in der landestypischen Schreibweise und Wortwahl von ${vn}; Substantive mit bestimmtem Artikel (falls die Sprache Artikel hat); gleichwertige Alternativen mit "/" getrennt, die wichtigste zuerst. Feld "de": deutsche Bedeutung (Substantive mit Artikel).
+Antworte NUR mit JSON: {"title":"kurzer deutscher Titel (max. 3 Wörter)","w":[{"de":"...","t":"..."}],"s":[{"de":"...","t":"..."}]}`, {modelTier:'default'});
+  const okArr = a => Array.isArray(a) && a.every(x=>x && typeof x.de==='string' && typeof x.t==='string' && x.t.trim());
+  if(!r || !okArr(r.w) || !okArr(r.s) || r.w.length<4 || r.s.length<2) throw {code:'shape'};
+  return {title:String(r.title||topic).slice(0,32), w:r.w.slice(0,12), s:r.s.slice(0,4)};
+}
+const WAIT = t => `<span class="ai-wait">${t} <span class="dots"><i></i><i></i><i></i></span></span>`;
 async function genUnit(){
   const topic=$('#aitopic').value.trim(), st=$('#aistatus');
   if(!topic){ $('#aitopic').focus(); return }
   if(!aiOn()){ st.textContent='Die KI ist hier nicht verfügbar. Öffne die App auf claude.ai, wenn du angemeldet bist.'; return }
-  const ln=LANGS[S.lang].name, vn=variantName();
-  st.innerHTML='<span class="ai-wait">KI baut deine Station <span class="dots"><i></i><i></i><i></i></span></span>'; $('#aigen').disabled=true;
+  st.innerHTML=WAIT('KI baut deine Station'); $('#aigen').disabled=true;
   try{
-    const r = await cap.sample.json(`Erstelle eine Lerneinheit ${ln} (Variante ${vn}) für deutschsprachige Anfänger (Niveau ${learnerLevel()}) zum Thema "${topic}".
-Genau 8 nützliche Wörter oder kurze Ausdrücke und genau 4 kurze, alltagstaugliche Sätze (höchstens 8 Wörter).
-Feld "t": korrekte Form in der landestypischen Schreibweise und Wortwahl von ${vn}; Substantive mit bestimmtem Artikel (falls die Sprache Artikel hat); gleichwertige Alternativen mit "/" getrennt, die wichtigste zuerst. Feld "de": deutsche Bedeutung (Substantive mit Artikel).
-Antworte NUR mit JSON: {"title":"kurzer deutscher Titel (max. 3 Wörter)","w":[{"de":"...","t":"..."}],"s":[{"de":"...","t":"..."}]}`, {modelTier:'default'});
-    const okArr = a => Array.isArray(a) && a.every(x=>x && typeof x.de==='string' && typeof x.t==='string' && x.t.trim());
-    if(!r || !okArr(r.w) || !okArr(r.s) || r.w.length<4 || r.s.length<2) throw {code:'shape'};
-    const c={id:'c'+Date.now().toString(36), title:String(r.title||topic).slice(0,32), w:r.w.slice(0,8), s:r.s.slice(0,4)};
-    L().custom.push(c); if(L().custom.length>12) L().custom.shift(); save(); toast('Neue Station: '+c.title); render();
+    const u=await aiMakeUnit(topic);
+    const c={id:'c'+Date.now().toString(36), ...u};
+    L().custom.push(c); if(L().custom.length>20) L().custom.shift(); save(); toast('Neue Station: '+c.title); render();
   }catch(e){ aiFail(e); st.textContent = e?.code==='shape'||e?.code==='invalid_json' ? 'Die KI-Antwort war unvollständig. Versuch es nochmal.' : 'Das hat nicht geklappt. Versuch es gleich nochmal.'; $('#aigen').disabled=false }
+}
+function openPlaceholder(u){
+  sheet(`<div class="stack"><div class="row" style="flex-wrap:nowrap">${mascot('wow',64)}<div><div class="eyebrow">KI-Pfad · Niveau ${esc(u.lvl)}</div><h2>${esc(u.title)}</h2></div></div>
+    <p class="muted" style="margin:0">Diese Station erstellt die KI jetzt für dich, passend zu deinem Niveau: 12 Wörter und 4 Sätze auf ${esc(LANGS[S.lang].name)} (${esc(variantName())}).</p>
+    <button class="btn wide" id="mk">${ic('sparkle')}Station erstellen</button><div id="mkst" class="muted"></div></div>`, sc=>{
+    const b=sc.querySelector('#mk'), m=sc.querySelector('#mkst');
+    b.onclick=async()=>{
+      if(!aiOn()){ m.textContent='Die KI ist hier nicht verfügbar. Öffne die App auf claude.ai, wenn du angemeldet bist.'; return }
+      b.disabled=true; m.innerHTML=WAIT('KI erstellt die Station');
+      try{ const r=await aiMakeUnit(u.title, u.lvl); L().cur.push({...r, id:u.id, title:u.title}); save(); sc.remove(); render(); openUnit(u.id) }
+      catch(e){ aiFail(e); b.disabled=false; m.textContent='Das hat nicht geklappt. Versuch es nochmal.' }
+    };
+  });
 }
 function sheet(html, onWire){
   const s=document.createElement('div'); s.className='scrim'; s.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
@@ -692,6 +1044,7 @@ function sheet(html, onWire){
 function openUnit(uid){
   const list=units(), i=list.findIndex(u=>u.id===uid), u=list[i];
   if(!unlocked(i,list)){ toast('Schließe zuerst „Wörter“ und „Sätze“ der vorherigen Station ab.'); return }
+  if(u.placeholder) return openPlaceholder(u);
   const s=L().st[uid]||{};
   const row=(k,n,t,sub,icon,lock)=>`<button class="lessonrow ${s[k]!=null?'done':''} ${lock?'lock':''}" data-l="${k}" ${lock?'aria-disabled="true"':''}><span class="num">${s[k]!=null?ic('check'):ic(icon)}</span><span class="t"><b>${n}. ${t}</b><small>${sub}${s[k]!=null?` · Bestwert ${Math.round(s[k]*100)} %`:''}</small></span>${lock?ic('lock'):''}</button>`;
   const w=itemsOf(uid).filter(x=>x.kind==='w').slice(0,4).map(x=>x.t).join(', ');
@@ -737,7 +1090,7 @@ function renderSpeak(){
   app.querySelectorAll('[data-topic]').forEach(b=>b.addEventListener('click',()=>{ talkTopic=b.dataset.topic; app.querySelectorAll('[data-topic]').forEach(x=>x.classList.toggle('on',x===b)) }));
   $('#talkgo').addEventListener('click',()=>openTalk(talkTopic));
   $('#drill').addEventListener('click',()=>startLesson('drill'));
-  refreshMic = () => { const w=$('#micwarn'); if(w) w.innerHTML = cap.dictReady && !cap.dict ? `<div class="warn">Das Mikrofon geht hier nicht. Sprechen funktioniert in Chrome oder Edge auf dem Computer und in der Claude-Desktop-App. Tippen geht überall.</div>` : '' };
+  refreshMic = () => { const w=$('#micwarn'); if(w) w.innerHTML = cap.dictReady && !cap.dict ? `<div class="warn">Auf diesem Gerät sprichst du über die Diktier-Taste (Mikrofon) deiner Handy-Tastatur. Das eingebaute Mikrofon der App geht in Chrome oder Edge am Computer und in der Claude-Desktop-App.</div>` : '' };
   refreshMic();
 }
 
@@ -768,6 +1121,7 @@ function renderMe(){
     <div class="card"><div class="eyebrow" style="margin-bottom:12px">Abzeichen · ${Object.keys(S.badges).length} / ${BADGES.length}</div><div class="badges">${BADGES.map(b=>`<div class="bdg ${S.badges[b.id]?'on':''}"><span class="med">${ic(b.icon)}</span><b>${b.name}</b><small>${b.d}</small></div>`).join('')}</div></div>
     <div class="card stack">
       <div class="eyebrow">Einstellungen</div>
+      <div><b>So antwortest du in Übungen</b><div class="seg" style="margin-top:8px" id="modeseg"><button data-m="speak" class="${S.mode!=='write'?'on':''}">Sprechen</button><button data-m="write" class="${S.mode==='write'?'on':''}">Tippen</button></div></div>
       <div><b>Tagesziel</b><div class="seg" style="margin-top:8px" id="goalseg">${[20,50,100,150].map(g=>`<button data-g="${g}" class="${S.goal===g?'on':''}">${g} XP</button>`).join('')}</div></div>
       ${Object.keys(LANGS[S.lang].variants).length>1?`<div><b>Schreibweise & Aussprache (${esc(LANGS[S.lang].name)})</b><div class="seg" style="margin-top:8px" id="varseg2">${Object.entries(LANGS[S.lang].variants).map(([k,v])=>`<button data-v="${k}" class="${k===variant()?'on':''}">${v.name}</button>`).join('')}</div></div>`:''}
       <div><b>Sprechtempo der Stimme</b><div class="seg" style="margin-top:8px" id="rateseg">${[[0.85,'Ruhig'],[1,'Normal'],[1.15,'Flott']].map(([r,l])=>`<button data-r="${r}" class="${(S.rate||1)===r?'on':''}">${l}</button>`).join('')}</div></div>
@@ -779,14 +1133,14 @@ function renderMe(){
   </section>`;
   wireTop();
   const seg=(id,attr,fn)=>$('#'+id)?.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ fn(b.dataset[attr]); save(); render() }));
-  seg('goalseg','g',v=>S.goal=+v); seg('varseg2','v',v=>S.variants[S.lang]=v); seg('rateseg','r',v=>S.rate=+v); seg('voiceseg','vo',v=>S.voice=v); seg('soundseg','s',v=>S.sound=v==='1');
-  $('#reset').addEventListener('click',e=>{ const b=e.currentTarget; if(b.dataset.c){ S.langs[S.lang]={st:{},items:{},custom:L().custom}; save(); render(); toast('Zurückgesetzt.') } else { b.dataset.c=1; b.textContent='Sicher? Nochmal tippen zum Zurücksetzen'; b.classList.add('bad') } });
+  seg('goalseg','g',v=>S.goal=+v); seg('modeseg','m',v=>S.mode=v); seg('varseg2','v',v=>S.variants[S.lang]=v); seg('rateseg','r',v=>S.rate=+v); seg('voiceseg','vo',v=>S.voice=v); seg('soundseg','s',v=>S.sound=v==='1');
+  $('#reset').addEventListener('click',e=>{ const b=e.currentTarget; if(b.dataset.c){ S.langs[S.lang]={st:{},items:{},custom:L().custom,cur:L().cur}; save(); render(); toast('Zurückgesetzt.') } else { b.dataset.c=1; b.textContent='Sicher? Nochmal tippen zum Zurücksetzen'; b.classList.add('bad') } });
 }
 
 /* ---------- Start ---------- */
 function renderOnboarding(step=0, pickLang=null){
   if(step===0){
-    app.innerHTML=`<section class="stack"><div class="hero"><div class="eyebrow">Willkommen bei Polyglo</div><h1>Lern sprechen, <em>nicht nur</em> lesen.</h1><p class="muted" style="margin:0;font-size:17px">Station für Station: erst Wörter, dann Sätze, dann sprichst du sie laut. Die App hört zu, korrigiert deine Aussprache und Schreibweise und merkt sich alles.</p></div>
+    app.innerHTML=`<section class="stack"><div class="hero">${mascot('happy',96)}<div class="eyebrow">Willkommen bei Polyglo</div><h1>Lern sprechen, <em>nicht nur</em> lesen.</h1><p class="muted" style="margin:0;font-size:17px">Über 300 Wörter und Sätze in 20 Stationen, danach ein KI-Pfad bis Niveau B2. Du antwortest per Sprache: Die App hört zu, sagt dir, ob es richtig ist und ob man dich gut versteht, und merkt sich alles.</p></div>
     <div class="eyebrow">Welche Sprache möchtest du lernen?</div>
     <div class="langgrid">${Object.entries(LANGS).map(([k,l])=>`<button class="langcard" data-lang="${k}"><span class="code">${l.code}</span><b>${l.name}</b><small>${l.self}</small></button>`).join('')}</div></section>`;
     app.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.lang; Object.keys(LANGS[k].variants).length>1 ? renderOnboarding(1,k) : renderOnboarding(2,k) }));
@@ -833,17 +1187,30 @@ function buildSteps(kind, unitId){
     });
   }
   // Sprechaufgaben ohne Mikrofon in Schreibaufgaben umwandeln (außer in reinen Sprechlektionen)
-  if(cap.dictReady && !cap.dict && kind!=='l3' && kind!=='drill') steps.forEach(s=>{ if(s.type==='speak') s.type='write' });
+  if(S.mode!=='write' && kind!=='l3' && kind!=='drill') convertSteps(steps, 0, 'speak');
   return steps;
+}
+function convertSteps(steps, from, mode){
+  for(let k=from;k<steps.length;k++){ const s=steps[k];
+    if(mode==='speak'){ if(s.type==='write') s.type='say'; else if(s.type==='listenwrite'){ s.type='speak'; s.hidden=true } else if(s.type==='build' && k%2) s.type='say' }
+    else { if(s.type==='say') s.type=s.item.kind==='s'&&k%2?'build':'write'; else if(s.type==='speak'&&s.hidden){ s.type='listenwrite'; s.hidden=false } }
+  }
 }
 function startLesson(kind, unitId=null){
   const steps=buildSteps(kind, unitId);
   if(!steps.length){ toast('Hier gibt es gerade nichts zu üben.'); return }
   LS_={kind, unitId, steps, i:0, graded:0, right:0, xp:0, combo:0, maxCombo:0, requeued:new Set(), firstTry:new Map()};
   const el=document.createElement('div'); el.className='lesson'; el.id='lesson';
-  el.innerHTML=`<div class="head"><button class="iconbtn" id="lx" aria-label="Lektion beenden">${ic('x')}</button><div class="bar" role="progressbar" aria-label="Fortschritt"><i id="lbar"></i></div><span class="combo tnum" id="lcombo"></span></div><div class="stage" id="stage"></div><div class="foot" id="foot"><div class="in" id="footin"></div></div>`;
+  el.innerHTML=`<div class="head"><button class="iconbtn" id="lx" aria-label="Lektion beenden">${ic('x')}</button><div class="bar" role="progressbar" aria-label="Fortschritt"><i id="lbar"></i></div>${kind!=='l3'&&kind!=='drill'?'<button class="chip modechip" id="lmode"></button>':''}<span class="combo tnum" id="lcombo"></span></div><div class="stage" id="stage"></div><div class="foot" id="foot"><div class="in" id="footin"></div></div>`;
   document.body.appendChild(el); document.body.style.overflow='hidden'; $('#nav').hidden=true;
   $('#lx').addEventListener('click',()=>{ const f=$('#footin'); if($('#lx').dataset.c){ closeLesson() } else { $('#lx').dataset.c=1; toast('Nochmal auf × tippen zum Beenden. Der Fortschritt dieser Lektion geht verloren.'); setTimeout(()=>{ const b=$('#lx'); if(b) delete b.dataset.c },3000) } });
+  const mc=$('#lmode');
+  if(mc){ const draw=()=>mc.innerHTML=S.mode!=='write'?ic('mic')+'Sprechen':ic('pencil')+'Tippen'; draw();
+    mc.setAttribute('aria-label','Antwortart wechseln');
+    mc.onclick=()=>{ S.mode=S.mode!=='write'?'write':'speak'; save(); draw();
+      const cs=cur?.step, open=cs && (cur.check || (['say','speak'].includes(cs.type) && !LS_.firstTry.has(cs.item.id+cs.type)));
+      convertSteps(LS_.steps, LS_.i+(open?0:1), S.mode); if(open){ micStop(); showStep() }
+      toast(S.mode==='speak'?'Du antwortest jetzt per Sprache.':'Du antwortest jetzt per Tastatur.') } }
   showStep();
 }
 function closeLesson(){ micStop(); $('#lesson')?.remove(); document.body.style.overflow=''; LS_=null; render() }
@@ -856,7 +1223,7 @@ function foot(mode, opts={}){
   if(mode==='check'){ fi.innerHTML=`<button class="btn wide" id="fbtn" ${cur?.ready?'':'disabled'}>Prüfen</button>${opts.skip?`<button class="btn ghost sm" id="fskip">${opts.skip}</button>`:''}`; $('#fbtn').onclick=doCheck; $('#fskip')?.addEventListener('click',opts.onSkip) }
   else if(mode==='next'){ fi.innerHTML=`<button class="btn wide" id="fbtn">${opts.label||'Weiter'}</button>`; $('#fbtn').onclick=nextStep }
   else if(mode==='none'){ fi.innerHTML=opts.html||'' }
-  else { fi.innerHTML=`<div class="fb" role="status"><span class="ic">${ic(mode==='ok'?'check':'x')}</span><div style="min-width:0"><h3>${opts.title}</h3>${opts.body||''}</div></div><div id="fextra"></div><button class="btn wide ${mode==='ok'?'good':'bad'}" id="fbtn">Weiter</button>`; $('#fbtn').onclick=nextStep; setTimeout(()=>$('#fbtn')?.focus(),50) }
+  else { fi.innerHTML=`<div class="fb" role="status">${mascot(mode==='ok'?'happy':'sad',52)}<div style="min-width:0"><h3>${opts.title}</h3>${opts.body||''}</div></div><div id="fextra"></div><button class="btn wide ${mode==='ok'?'good':'bad'}" id="fbtn">Weiter</button>`; $('#fbtn').onclick=nextStep; setTimeout(()=>$('#fbtn')?.focus(),50) }
 }
 function setReady(v){ if(cur) cur.ready=v; const b=$('#fbtn'); if(b && b.textContent==='Prüfen') b.disabled=!v }
 document.addEventListener('keydown',e=>{ if(!LS_) return; if(e.key==='Enter' && !e.shiftKey){ const b=$('#fbtn'); if(b && !b.disabled && document.activeElement?.tagName!=='BUTTON'){ e.preventDefault(); b.click() } } });
@@ -865,7 +1232,7 @@ function grade(ok, step, almost=false){
   const first=!LS_.firstTry.has(step.item.id+step.type);
   if(first){ LS_.firstTry.set(step.item.id+step.type, ok); LS_.graded++; if(ok) LS_.right++ }
   if(ok){ LS_.combo++; LS_.maxCombo=Math.max(LS_.maxCombo,LS_.combo); const g=(almost?6:10)+(LS_.combo>=3?2:0); LS_.xp+=g; sfx('good') }
-  else { LS_.combo=0; sfx('bad'); if(!LS_.requeued.has(step.item.id) && step.type!=='speak'){ LS_.requeued.add(step.item.id); LS_.steps.push({type:step.item.kind==='w'?pick(['write','choiceD']):'build', item:step.item, retry:true}) } }
+  else { LS_.combo=0; sfx('bad'); if(!LS_.requeued.has(step.item.id) && !['speak','say'].includes(step.type)){ LS_.requeued.add(step.item.id); LS_.steps.push({type:step.item.kind==='w'?pick(['write','choiceD']):'build', item:step.item, retry:true}) } }
   srs(step.item, ok);
   progress();
 }
@@ -927,7 +1294,7 @@ function showStep(){
     foot('check');
     return;
   }
-  if(step.type==='speak') return speakStep(step);
+  if(step.type==='speak'||step.type==='say') return spokenStep(step);
 }
 
 async function doCheck(){
@@ -970,77 +1337,121 @@ async function doCheck(){
   say(it.t);
 }
 
-/* Sprechaufgabe: anhören, sagen, Bewertung pro Wort, KI-Tipp */
-function speakStep(step){
-  const it=step.item, st=$('#stage'); let attempts=0;
-  st.innerHTML=`<div class="prompt">Sprich nach</div>
-    <div class="wordcard"><div class="big ${it.kind==='s'?'sent':''}" id="target">${esc(it.t)}</div><div class="trans">${esc(it.de)}</div>
-    <div class="hear"><button class="spk" data-say="1" aria-label="Anhören">${ic('speaker')}</button><button class="spk slow" data-say="1" data-slow="1" aria-label="Langsam anhören">${ic('turtle')}</button></div></div>
-    <button class="mic" id="micbtn" aria-label="Aufnahme starten">${ic('mic')}</button>
-    <div class="live" id="live" aria-live="polite">Tippe aufs Mikrofon und sprich</div>
+/* Sprechaufgaben: nachsprechen ("speak") oder auf Deutsch gefragt frei antworten ("say").
+   Bewertet wird beides: Stimmt der Inhalt? Und wie deutlich ist die Aussprache? */
+async function aiSpoken(item, heard, typed){
+  const ln=LANGS[S.lang].name, vn=variantName();
+  return cap.sample.json(`Eine deutschsprachige Person lernt ${ln} (${vn}), Niveau ${learnerLevel()}. Aufgabe: "${item.de}" auf ${ln} SAGEN.
+Musterlösung(en): ${item.alts.map(a=>`"${a}"`).join(', ')}
+${typed?'Die Diktierfunktion der Handy-Tastatur':'Die Spracherkennung'} hat verstanden: "${heard}"
+Spracherkennung schreibt bei undeutlicher Aussprache oft ähnlich klingende, falsche Wörter. Unterscheide: (a) die Person hat inhaltlich oder grammatisch etwas Falsches gesagt, (b) die Antwort ist richtig, aber ein Wort war so undeutlich, dass etwas Ähnliches erkannt wurde. Groß-/Kleinschreibung, Satzzeichen und Akzente der Erkennung NICHT bewerten. Gleichwertige Alternativen in ${vn} zählen als richtig.
+Antworte NUR mit JSON: {"correct": true|false, "pronunciation": "gut"|"okay"|"undeutlich", "feedback": "1–2 kurze, freundliche Sätze auf Deutsch: was richtig war, was falsch war", "tip": "konkreter Aussprache-Tipp zu undeutlichen Wörtern (Zunge, Lippen, Betonung), sonst leer", "phonetic": "vereinfachte Lautschrift der Musterlösung für Deutschsprachige, betonte Silbe in GROSSBUCHSTABEN"}`, {modelTier:'quick'});
+}
+const pronText = v => v>=95?'perfekt':v>=85?'sehr gut':v>=70?'gut':v>=50?'teilweise unklar':'schwer verständlich';
+
+function spokenStep(step){
+  const it=step.item, st=$('#stage'), isSay=step.type==='say', hidden=!!step.hidden, lnm=LANGS[S.lang].name;
+  let attempts=0, peeked=false, passed=false;
+  const big=`big ${it.kind==='s'?'sent':''}`;
+  st.innerHTML=`${step.retry?'<div class="eyebrow" style="color:var(--accent)">Nochmal üben</div>':''}
+    ${isSay?`<div class="prompt">Sag es auf ${esc(lnm)}</div><div class="wordcard"><div class="${big}">${esc(it.de)}</div><div class="row"><button class="btn ghost sm" id="peek">${ic('ear')}Lösung anhören</button><button class="btn ghost sm" id="totype">${ic('pencil')}Lieber tippen</button></div></div>`
+    :`<div class="prompt">${hidden?'Hör zu und sprich nach':'Sprich nach'}</div><div class="wordcard"><div class="${big}" id="target"${hidden?' style="filter:blur(10px)" aria-hidden="true"':''}>${esc(it.t)}</div><div class="trans">${esc(it.de)}</div><div class="hear"><button class="spk" data-say="1" aria-label="Anhören">${ic('speaker')}</button><button class="spk slow" data-say="1" data-slow="1" aria-label="Langsam anhören">${ic('turtle')}</button></div></div>`}
+    <div id="inarea" style="margin-top:8px"></div>
+    <div class="live" id="live" aria-live="polite"></div>
     <div id="spres"></div>
-    <p class="note">Bewertet wird, wie deutlich die Spracherkennung dich versteht. Sprich ruhig in normalem Tempo.</p>`;
+    <p class="note">${isSay?'Die App prüft, ob deine Antwort richtig ist und wie deutlich du sie aussprichst.':'Bewertet wird, wie deutlich die Spracherkennung dich versteht.'}</p>`;
   st.querySelectorAll('[data-say]').forEach(b=>b.addEventListener('click',()=>say(it.t,!!b.dataset.slow)));
-  const btn=$('#micbtn'), live=$('#live');
-  const skip=()=>{ micStop(); LS_.firstTry.set(it.id+'speak',false); LS_.graded++; nextStep() };
-  foot('none',{html:`<button class="btn ghost wide" id="fskip">Kann gerade nicht sprechen</button>`}); $('#fskip').onclick=skip;
-  setTimeout(()=>say(it.t),300);
+  $('#peek')?.addEventListener('click',()=>{ peeked=true; say(it.t) });
+  $('#totype')?.addEventListener('click',()=>{ micStop(); step.type='write'; showStep() });
+  const live=$('#live'), area=$('#inarea');
+  const skip=()=>{ micStop(); if(!LS_.firstTry.has(it.id+step.type)){ LS_.firstTry.set(it.id+step.type,false); LS_.graded++ } nextStep() };
+  const skipFoot=()=>{ $('#foot').className='foot'; foot('none',{html:`<button class="btn ghost wide" id="fskip">Kann gerade nicht sprechen</button>`}); $('#fskip').onclick=skip };
+  skipFoot();
+  if(!isSay) setTimeout(()=>say(it.t),300);
 
-  refreshMic = () => {
-    if(!$('#micbtn')) return;
-    if(!cap.dictReady){ btn.disabled=true; live.textContent='Mikrofon wird vorbereitet …'; return }
-    if(!cap.dict){ btn.disabled=true; live.innerHTML='Das Mikrofon geht hier nicht.<br><span style="font-size:15px">Öffne Polyglo in Chrome oder Edge auf dem Computer oder in der Claude-Desktop-App. Bis dahin: laut nachsprechen und selbst bewerten.</span>';
-      foot('none',{html:`<button class="btn good wide" id="selfok">Hab’s laut gesagt</button><button class="btn ghost sm" id="fskip">Überspringen</button>`});
-      $('#selfok').onclick=()=>{ LS_.firstTry.set(it.id+'speak',true); LS_.graded++; LS_.right++; LS_.xp+=4; srs(it,true); nextStep() }; $('#fskip').onclick=skip; return }
-    btn.disabled=false;
-  };
-  refreshMic();
-
-  let finals='', partial='', evaluated=false, idleT=null, maxT=null;
-  const show=()=>{ live.innerHTML = (finals||partial) ? `<b>${esc((finals+' '+partial).trim())}</b>` : 'Ich höre zu …' };
-  const finish=async()=>{
-    if(evaluated) return; evaluated=true; clearTimeout(idleT); clearTimeout(maxT);
-    btn.classList.remove('rec'); btn.innerHTML=ic('mic'); btn.setAttribute('aria-label','Nochmal aufnehmen');
-    const heard=(finals+' '+partial).trim();
-    if(!heard){ live.textContent='Ich habe nichts gehört. Tippe aufs Mikrofon und sprich etwas lauter.'; return }
-    attempts++; evaluate(heard);
-  };
-  const sink={
-    partial:t=>{ partial=t; show(); clearTimeout(idleT); if(finals) idleT=setTimeout(()=>micStop(),1600) },
-    final:t=>{ finals=(finals+t).replace(/^\s+/,''); partial=''; show(); clearTimeout(idleT); idleT=setTimeout(()=>micStop(),1300) },
-    state:(s,reason)=>{ if(s==='listening'){ btn.classList.add('rec'); btn.innerHTML=ic('stop'); btn.setAttribute('aria-label','Aufnahme stoppen'); show() }
-      if(s==='idle'){ btn.classList.remove('rec'); btn.innerHTML=ic('mic'); if(finals||partial) finish(); else if(reason && !['stopped','viewer_stopped','hidden'].includes(reason)) live.textContent=MIC_ERR[reason]||MIC_ERR.upstream_error; else if(!evaluated) live.textContent='Tippe aufs Mikrofon und sprich'; } },
-    error:code=>{ btn.classList.remove('rec'); btn.innerHTML=ic('mic'); if(code!=='stopped') live.textContent=MIC_ERR[code]||MIC_ERR.upstream_error; if(code==='unavailable'){ cap.dict=null; refreshMic() } },
-  };
-  btn.addEventListener('click',()=>{
-    if(btn.classList.contains('rec')||mic.state==='listening'||mic.state==='starting'){ micStop(); return }
-    say_stop(); finals=''; partial=''; evaluated=false; $('#spres').innerHTML='';
-    if(!micStart(sink)) return;
-    live.textContent='Mikrofon startet …'; clearTimeout(maxT); maxT=setTimeout(()=>micStop(), it.kind==='s'?14000:8000);
-  });
-
-  async function evaluate(heard){
-    const r=speakScore(heard, it), sc=r.score, pass=sc>=70;
-    const col= sc>=85?'var(--good)': sc>=60?'var(--gold)':'var(--bad)';
-    const missed=r.words.filter((w,i)=>r.st[i]!=='ok');
-    $('#spres').innerHTML=`<div class="spres"><div class="score" style="--p:${sc};--c:${col}"><span class="tnum">${sc}</span></div><div style="min-width:0"><div class="eyebrow">${sc>=95?'Perfekt ausgesprochen':sc>=85?'Sehr gut verständlich':sc>=70?'Gut, mit kleinen Unklarheiten':sc>=40?'Teilweise verstanden':'Kaum verstanden'}</div><div class="words" style="margin-top:6px">${r.words.map((w,i)=>`<span class="w ${r.st[i]||'miss'}">${esc(w)}</span>`).join('')}</div></div></div>
-      <div class="muted" style="font-size:14px;margin-top:8px">Verstanden: „${esc(heard)}“</div><div id="tipbox"></div>`;
-    live.textContent='';
-    if(pass){ if(sc>=85) S.stats.speakGood++; if(sc>=95) S.stats.speakPerfect++ }
-    const it2=L().items[it.id]; if(it2) it2.sp=Math.max(it2.sp||0,sc);
-    if(sc<95 && aiOn()){
-      $('#tipbox').innerHTML='<div class="tip"><span class="ai-wait">KI hört genauer hin <span class="dots"><i></i><i></i><i></i></span></span></div>';
-      aiTip(it, heard, missed).then(j=>{ const tb=$('#tipbox'); if(!tb) return; tb.innerHTML=`<div class="tip"><div class="eyebrow">Aussprache-Tipp</div><div>${esc(j?.tip||'')}</div>${j?.phonetic?`<div style="margin-top:6px;font-weight:800">${esc(j.phonetic)}</div>`:''}</div>` }).catch(e=>{ aiFail(e); const tb=$('#tipbox'); if(tb) tb.innerHTML='' });
+  let finals='', partial='', idleT=null, maxT=null, evaluated=false;
+  function setupInput(){
+    if(!document.body.contains(area)) return;
+    if(!cap.dictReady){ area.innerHTML=`<button class="mic" disabled aria-label="Mikrofon">${ic('mic')}</button>`; live.textContent='Mikrofon wird vorbereitet …'; return }
+    if(cap.dict){
+      area.innerHTML=`<button class="mic" id="micbtn" aria-label="Aufnahme starten">${ic('mic')}</button>`;
+      live.textContent='Tippe aufs Mikrofon und sprich'; wireMic($('#micbtn')); return;
     }
-    if(pass || attempts>=3){
-      grade(pass, step, sc<85); const it3=L().items[it.id]; if(it3) it3.sp=Math.max(it3.sp||0,sc);
-      foot(pass?'ok':'no',{title: pass ? (sc>=95?'Perfekt!':sc>=85?'Klingt super!':'Gut verstanden!') : 'Weiter üben', body: pass?'':`<p>Wir wiederholen das bald. Hör dir den Satz nochmal langsam an.</p>`});
-      if(pass) $('#fextra').innerHTML=`<button class="btn ghost sm" id="again">${ic('mic')}Nochmal für mehr Punkte</button>`;
-      $('#again')?.addEventListener('click',()=>{ $('#foot').className='foot'; foot('none',{html:''}); btn.click() });
-    } else {
+    // Ohne eingebautes Mikrofon (z. B. iPhone): Diktier-Taste der Handy-Tastatur
+    area.innerHTML=`<textarea class="field" id="kbd" rows="2" lang="${locale()}" placeholder="Diktier-Taste der Tastatur drücken und sprechen …" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea><button class="btn sea wide" id="kbddone" style="margin-top:10px" disabled>${ic('check')}Auswerten</button>`;
+    live.innerHTML=`<span style="font-size:14px">Tippe ins Feld und dann auf ${ic('mic')} an deiner Tastatur. Damit dein Handy ${esc(lnm)} versteht, füge in den Einstellungen unter „Tastaturen“ die Sprache ${esc(lnm)} hinzu und wechsle mit der Weltkugel-Taste zu ihr.</span>`;
+    const k=$('#kbd'), d=$('#kbddone');
+    k.addEventListener('input',()=>d.disabled=!k.value.trim());
+    d.addEventListener('click',()=>{ const v=k.value.trim(); if(v) evaluate(v,true) });
+    k.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); e.stopPropagation(); d.click() } });
+  }
+  function wireMic(btn){
+    const show=()=>{ live.innerHTML=(finals||partial)?`<b>${esc((finals+' '+partial).trim())}</b>`:'Ich höre zu …' };
+    const finish=()=>{ if(evaluated) return; clearTimeout(idleT); clearTimeout(maxT); btn.classList.remove('rec'); btn.innerHTML=ic('mic');
+      const heard=(finals+' '+partial).trim(); if(!heard){ live.textContent='Ich habe nichts gehört. Tippe aufs Mikrofon und sprich etwas lauter.'; return }
+      evaluated=true; evaluate(heard,false) };
+    const sink={
+      partial:t=>{ partial=t; show(); clearTimeout(idleT); if(finals) idleT=setTimeout(()=>micStop(),1600) },
+      final:t=>{ finals=(finals+t).replace(/^\s+/,''); partial=''; show(); clearTimeout(idleT); idleT=setTimeout(()=>micStop(),1300) },
+      state:(s,reason)=>{ if(s==='listening'){ btn.classList.add('rec'); btn.innerHTML=ic('stop'); btn.setAttribute('aria-label','Aufnahme stoppen'); show() }
+        if(s==='idle'){ btn.classList.remove('rec'); btn.innerHTML=ic('mic'); btn.setAttribute('aria-label','Aufnahme starten');
+          if(finals||partial) finish(); else if(reason && !['stopped','viewer_stopped','hidden'].includes(reason)) live.textContent=MIC_ERR[reason]||MIC_ERR.upstream_error; else if(!evaluated) live.textContent='Tippe aufs Mikrofon und sprich' } },
+      error:code=>{ btn.classList.remove('rec'); btn.innerHTML=ic('mic'); if(code!=='stopped') live.textContent=MIC_ERR[code]||MIC_ERR.upstream_error; if(code==='unavailable'){ cap.dict=null; setupInput() } },
+    };
+    btn.addEventListener('click',()=>{
+      if(btn.classList.contains('rec')||mic.state==='listening'||mic.state==='starting'){ micStop(); return }
+      say_stop(); finals=''; partial=''; evaluated=false;
+      if(!micStart(sink)) return;
+      live.textContent='Mikrofon startet …'; clearTimeout(maxT); maxT=setTimeout(()=>micStop(), it.kind==='s'?15000:8000);
+    });
+  }
+  refreshMic=setupInput; setupInput();
+
+  async function evaluate(heard, typed){
+    attempts++;
+    const r=speakScore(heard,it), sc=r.score, missed=r.words.filter((w,i)=>r.st[i]!=='ok');
+    let correct=sc>=70, info=null;
+    const pv=()=> (isSay && info && info.correct && sc<70) ? ({gut:90,okay:72,undeutlich:45}[info.pronunciation]||70) : sc;
+    const draw=(extra='')=>{
+      const v=pv(), col=v>=85?'var(--good)':v>=60?'var(--gold)':'var(--bad)', showWords=!(isSay && sc<40) && !(isSay && info?.correct && sc<70);
+      $('#spres').innerHTML=`<div class="spres"><div class="score" style="--p:${v};--c:${col}"><span class="tnum">${v}</span></div><div style="min-width:0">
+        ${isSay?`<span class="verdict ${correct?'ok':'no'}">${ic(correct?'check':'x')}${correct?'Inhalt richtig':'Inhalt nicht richtig'}</span>`:''}
+        <div class="eyebrow" style="margin-top:6px">Aussprache: ${pronText(v)}</div>
+        ${showWords?`<div class="words" style="margin-top:6px">${r.words.map((w,i)=>`<span class="w ${r.st[i]||'miss'}">${esc(w)}</span>`).join('')}</div>`:''}
+      </div></div>
+      <div class="muted" style="font-size:14px;margin-top:8px">${typed?'Eingegeben':'Verstanden'}: „${esc(heard)}“</div>${extra}`;
+    };
+    if(hidden){ const t=$('#target'); if(t){ t.style.filter=''; t.removeAttribute('aria-hidden') } }
+    const askAI = aiOn() && sc<92;
+    draw(askAI?`<div class="tip">${WAIT('KI hört genauer hin')}</div>`:'');
+    foot('none',{html:''});
+    if(askAI){
+      try{ info = isSay ? await aiSpoken(it, heard, typed) : await aiTip(it, heard, missed) }catch(e){ aiFail(e) }
+      if(!document.body.contains(area)) return;
+      if(isSay && info && typeof info.correct==='boolean') correct = info.correct || sc>=85;
+      draw(info?`<div class="tip">${info.feedback?`<div>${esc(info.feedback)}</div>`:''}${info.tip?`<div class="eyebrow" style="margin-top:8px">Aussprache-Tipp</div><div>${esc(info.tip)}</div>`:''}${info.phonetic?`<div style="margin-top:6px;font-weight:800">${esc(info.phonetic)}</div>`:''}</div>`:'');
+    }
+    verdict(correct, pv());
+  }
+  function verdict(correct, v){
+    const li=L().items[it.id]; if(li) li.sp=Math.max(li.sp||0, correct?v:0);
+    if(correct){
+      if(!passed){ grade(true, step, v<85||peeked); if(v>=85) S.stats.speakGood++; if(v>=95) S.stats.speakPerfect++ }
+      passed=true;
+      foot('ok',{title: isSay ? (v>=85?'Richtig und gut ausgesprochen!':'Richtig! Die Aussprache geht noch klarer.') : (v>=95?'Perfekt!':v>=85?'Klingt super!':'Gut verstanden!'), body: isSay?`<p class="corr">${esc(it.t)}</p>`:''});
+      $('#fextra').innerHTML=`<button class="btn ghost sm" id="again">${ic('mic')}Nochmal sprechen</button>`;
+      $('#again').onclick=()=>{ skipFoot(); $('#spres').innerHTML=''; setupInput() };
+      if(isSay) say(it.t);
+    } else if(attempts<3){
       sfx('bad');
-      foot('none',{html:`<div class="fb" style="color:var(--bad)"><span class="ic">${ic('repeat')}</span><div><h3>Nochmal versuchen (${attempts}/3)</h3><p>Hör erst langsam zu und achte auf die rot markierten Wörter.</p></div></div><button class="btn ghost wide" id="fskip">Überspringen</button>`});
-      $('#foot').className='foot no'; $('#fskip').onclick=skip;
+      foot('none',{html:`<div class="fb" style="color:var(--bad)">${mascot('sad',52)}<div style="min-width:0"><h3>Nochmal versuchen (${attempts}/3)</h3><p style="color:var(--ink)">${isSay?`Richtig wäre: <b>${esc(it.t)}</b>`:'Hör erst langsam zu und achte auf die rot markierten Wörter.'}</p></div></div><div class="row"><button class="btn sea sm" id="hearsol">${ic('speaker')}Langsam anhören</button><button class="btn ghost sm" id="fskip">Überspringen</button></div>`});
+      $('#foot').className='foot no'; $('#fskip').onclick=skip; $('#hearsol').onclick=()=>say(it.t,true);
+      if(isSay) say(it.t);
+      const k=$('#kbd'); if(k){ k.value=''; $('#kbddone').disabled=true }
+    } else {
+      grade(false, step);
+      foot('no',{title:'Weiter üben', body:`<p>Richtig: <b>${esc(it.t)}</b></p><p>Das kommt bald in der Wiederholung wieder dran.</p>`});
+      say(it.t);
     }
   }
 }
@@ -1056,7 +1467,7 @@ function finishLesson(){
   const stars = acc>=0.95?3:acc>=0.75?2:1;
   sfx('done'); confetti();
   const st=$('#stage'); $('#lbar').style.width='100%';
-  st.innerHTML=`<div class="result"><div class="trophy">${ic('trophy')}</div><h1>${acc>=0.95?'Meisterhaft!':acc>=0.75?'Lektion geschafft!':'Geschafft, weiter so!'}</h1>
+  st.innerHTML=`<div class="result">${mascot(acc>=0.75?'wow':'happy',140)}<h1>${acc>=0.95?'Meisterhaft!':acc>=0.75?'Lektion geschafft!':'Geschafft, weiter so!'}</h1>
     <div class="bigstars">${[0,1,2].map(i=>starSvg(i<stars).replace('<svg','<svg style="animation-delay:'+(0.15*i+0.2)+'s"')).join('')}</div>
     <div class="tiles3"><div class="stat"><b class="tnum" style="color:var(--gold)">+${total}</b><small>XP</small></div><div class="stat"><b class="tnum" style="color:var(--good)">${Math.round(acc*100)}%</b><small>Richtig</small></div><div class="stat"><b class="tnum" style="color:var(--accent)">${LS_.maxCombo}</b><small>Beste Serie</small></div></div>
     ${newStar?`<p class="muted" style="margin:0;font-weight:700">Neuer Stern für diese Station!</p>`:''}
