@@ -2,169 +2,211 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: one narrow app column, sticky tab bar, cards only for songs; a bottom sheet for rating. */
+/* Layout: late-night radio. One dark stage with warm glows, a spinning record in the hero,
+   cassette-like song slots, an app-style tab bar at the bottom, a bottom sheet for rating. */
 :root {
-  --bg: #EDEFF6;
-  --surface: #FFFFFF;
-  --surface-2: #E3E6F1;
-  --ink: #1B1D3A;
-  --muted: #5B5F83;
-  --line: #D3D6E5;
-  --accent: #D92E73;
-  --accent-soft: #F9DCE8;
-  --accent-ink: #FFFFFF;
-  --good: #1D8556;
-  --warn: #A9640A;
-  --shadow: 0 1px 2px rgba(27,29,58,.06), 0 6px 20px rgba(27,29,58,.06);
-  --f-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
-  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #0D0A1D;
+  --surface: #19142F;
+  --surface-2: #251E44;
+  --surface-3: #30285A;
+  --ink: #F6F2FF;
+  --muted: #A69CC9;
+  --line: #2F2757;
+  --accent: #FF4F7B;
+  --gold: #FFC44D;
+  --mint: #5BE1C6;
+  --accent-soft: rgba(255,79,123,.16);
+  --accent-ink: #1C0610;
+  --good: #5BE1C6;
+  --warn: #FFC44D;
+  --grad: linear-gradient(135deg, #FF4F7B 0%, #FF8A5B 55%, #FFC44D 100%);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --f-display: "Unbounded", "Manrope", system-ui, sans-serif;
+  --f-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #11122A; --surface: #1B1D3B; --surface-2: #25284C; --ink: #ECEDF8; --muted: #A2A6C9;
-    --line: #30335C; --accent: #FF5A98; --accent-soft: #46203F; --accent-ink: #1A0712;
-    --good: #4FD39A; --warn: #F1B34C; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #11122A; --surface: #1B1D3B; --surface-2: #25284C; --ink: #ECEDF8; --muted: #A2A6C9;
-  --line: #30335C; --accent: #FF5A98; --accent-soft: #46203F; --accent-ink: #1A0712;
-  --good: #4FD39A; --warn: #F1B34C; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; min-height: 100%; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
-.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 96px; }
+.glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.glow::before, .glow::after { content: ""; position: absolute; border-radius: 50%; filter: blur(80px); opacity: .45; }
+.glow::before { width: 520px; height: 520px; left: -180px; top: -200px; background: #FF4F7B; opacity: .28; }
+.glow::after { width: 460px; height: 460px; right: -200px; bottom: -160px; background: #7B4DFF; opacity: .25; }
+.wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px calc(110px + env(safe-area-inset-bottom, 0px)); }
 h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
-h1 { font-size: 30px; font-weight: 800; line-height: 1.05; }
-h2 { font-size: 20px; font-weight: 700; }
+h1 { font-size: clamp(30px, 8vw, 44px); font-weight: 800; line-height: 1; }
+h2 { font-size: 19px; font-weight: 700; }
 h3 { font-size: 16px; font-weight: 700; }
 p { margin: 0; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
-.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
-.stack-lg { display: flex; flex-direction: column; gap: 28px; }
+.stack-lg { display: flex; flex-direction: column; gap: 30px; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .spread { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .min0 { min-width: 0; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
-header.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink); font-family: var(--f-display); font-weight: 800; font-size: 24px; }
-.me-chip { font-size: 13px; color: var(--muted); }
+/* Hero */
+header.top { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; margin-bottom: 22px; }
+.vinyl { width: 92px; height: 92px; border-radius: 50%; position: relative; flex: none;
+  background: repeating-radial-gradient(circle at 50% 50%, #15112A 0 2px, #1F1A3B 2px 4px);
+  box-shadow: 0 0 0 2px #2A2350, 0 12px 30px rgba(255,79,123,.25); }
+.vinyl::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 20deg, transparent 0 40deg, rgba(255,255,255,.10) 55deg, transparent 75deg 220deg, rgba(255,255,255,.07) 235deg, transparent 255deg); }
+.vinyl .label { position: absolute; inset: 30%; border-radius: 50%; background: var(--grad); display: grid; place-items: center; font: 800 18px var(--f-display); color: var(--accent-ink); z-index: 1; }
+.vinyl .label::after { content: ""; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--bg); }
+.vinyl .label span { transform: translateY(-9px); font-size: 14px; }
+.hero-sub { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 42ch; }
+.hero-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--ink); }
+.pill .live { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 3px rgba(91,225,198,.2); }
+@media (max-width: 420px) { .vinyl { width: 72px; height: 72px; } header.top { gap: 14px; } }
 
-nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px 0 10px; margin-bottom: 8px; }
-nav.tabs button { font: 600 14px var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 10px; padding: 10px 4px; cursor: pointer; position: relative; }
-nav.tabs button[aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
-nav.tabs .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 700 11px/18px var(--f-mono); }
+/* Bottom tab bar */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; justify-content: center;
+  padding: 8px max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: rgba(13,10,29,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+nav.tabs .inner { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; max-width: 720px; }
+nav.tabs button { font: 700 11px var(--f-body); letter-spacing: .02em; color: var(--muted); background: transparent; border: 0; border-radius: 14px; padding: 8px 2px 6px; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+nav.tabs button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); background: var(--surface-2); }
+nav.tabs button[aria-selected="true"] svg { stroke: var(--accent); }
+nav.tabs .badge { position: absolute; top: 3px; left: calc(50% + 6px); min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 800 11px/18px var(--f-mono); }
 
-.card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
-.panel { border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
 
-button.btn, a.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--f-body); border-radius: 12px; padding: 11px 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
-button.btn.primary, a.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn, a.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 700 15px var(--f-body); border-radius: 14px; padding: 12px 18px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; text-decoration: none; transition: transform .12s ease, filter .12s ease; }
+button.btn:hover, a.btn:hover { filter: brightness(1.12); }
+button.btn:active, a.btn:active { transform: scale(.97); }
+button.btn.primary, a.btn.primary { background: var(--grad); border-color: transparent; color: var(--accent-ink); box-shadow: 0 8px 22px rgba(255,79,123,.3); }
+a.btn.spotify { background: #1ED760; border-color: transparent; color: #08160C; }
+a.btn.spotify svg { width: 18px; height: 18px; fill: currentColor; }
 button.btn.ghost { background: transparent; }
-button.btn:disabled { opacity: .45; cursor: not-allowed; }
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, label.chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-.btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+button.btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, label.check:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn.sm { padding: 8px 12px; font-size: 13px; border-radius: 11px; }
 
-input[type="text"], input[type="url"], textarea { width: 100%; font: 15px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
+input[type="text"], textarea { width: 100%; font: 500 15px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
+input::placeholder, textarea::placeholder { color: #6E6596; }
 textarea { min-height: 84px; resize: vertical; }
-label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+label.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
-.err { color: var(--accent); font-size: 13px; font-weight: 600; }
-.ok { color: var(--good); font-size: 13px; font-weight: 600; }
+.err { color: var(--accent); font-size: 13px; font-weight: 700; }
+.ok { color: var(--mint); font-size: 13px; font-weight: 700; }
 
-/* Today: three slots */
-.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.slot { border: 2px dashed var(--line); border-radius: 14px; padding: 10px; min-height: 76px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; }
-.slot.filled { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
-.slot .t { font-weight: 600; font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; }
-.slot .n { font: 700 12px var(--f-mono); color: var(--muted); }
-.dots { display: inline-flex; gap: 4px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); }
-.dot.on { background: var(--accent); border-color: var(--accent); }
+/* Today: three cassette slots */
+.today-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.big-count { font: 800 34px var(--f-display); line-height: 1; }
+.big-count small { font-size: 16px; color: var(--muted); }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.slot { border: 2px dashed var(--line); border-radius: 18px; padding: 12px; min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-width: 0; position: relative; overflow: hidden; }
+.slot .n { font: 800 12px var(--f-mono); color: var(--muted); }
+.slot .t { font-weight: 800; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.slot .a { font-size: 12px; opacity: .8; overflow-wrap: anywhere; }
+.slot.filled { border: 0; background: var(--grad); color: var(--accent-ink); }
+.slot.filled .n { color: rgba(28,6,16,.6); }
+.slot.filled::after { content: ""; position: absolute; right: -18px; bottom: -18px; width: 58px; height: 58px; border-radius: 50%; border: 10px solid rgba(28,6,16,.14); }
+.dots { display: inline-flex; gap: 5px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--surface-3); }
+.dot.on { background: var(--grad); box-shadow: 0 0 8px rgba(255,79,123,.5); }
+.eq { display: inline-flex; gap: 3px; align-items: flex-end; height: 18px; }
+.eq i { width: 4px; border-radius: 2px; background: var(--grad); height: 40%; }
 
 /* Song card */
-.song { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; }
-.cover { width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center; font: 800 20px var(--f-display); color: #fff; }
-.song .title { font-weight: 600; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.song { display: grid; grid-template-columns: 60px 1fr; gap: 14px; align-items: start; }
+.cover { width: 60px; height: 60px; border-radius: 14px; display: grid; place-items: center; font: 800 22px var(--f-display); color: #fff; position: relative; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+.cover::after { content: ""; position: absolute; right: -14px; bottom: -14px; width: 40px; height: 40px; border-radius: 50%; background: repeating-radial-gradient(circle, rgba(0,0,0,.35) 0 1px, rgba(0,0,0,.2) 1px 3px); }
+.song .title { font-weight: 800; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
 .song .meta { font-size: 13px; color: var(--muted); }
-.note { font-size: 14px; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
-.score-pill { display: inline-flex; align-items: baseline; gap: 2px; font: 700 15px var(--f-mono); padding: 3px 9px; border-radius: 999px; background: var(--surface-2); }
-.score-pill.hot { background: var(--accent); color: var(--accent-ink); }
+.note { font-size: 14px; background: var(--surface-2); border-radius: 12px; padding: 8px 11px; overflow-wrap: anywhere; font-style: italic; }
+.score-pill { display: inline-flex; align-items: baseline; gap: 2px; font: 800 15px var(--f-mono); padding: 4px 10px; border-radius: 999px; background: var(--surface-3); white-space: nowrap; }
+.score-pill.hot { background: var(--grad); color: var(--accent-ink); }
 .score-pill small { font-size: 11px; opacity: .7; }
-.tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--surface-3); color: var(--ink); }
 .review { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .review .c { overflow-wrap: anywhere; }
 
 /* Leaderboard */
 .lb { display: flex; flex-direction: column; gap: 8px; }
-.lb-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
-.lb-row.lead { outline: 2px solid var(--accent); }
+.lb-row { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; padding: 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+.lb-row.lead { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad) border-box; border: 2px solid transparent; padding: 18px 14px; box-shadow: 0 12px 34px rgba(255,79,123,.2); }
 .lb-rank { font: 800 22px var(--f-display); color: var(--muted); text-align: center; }
-.lb-row.lead .lb-rank { color: var(--accent); }
-.lb-avg { font: 700 26px var(--f-mono); text-align: right; line-height: 1; }
-.lb-avg small { display: block; font: 500 11px var(--f-body); color: var(--muted); margin-top: 4px; }
-.bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
-.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
-.statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-.stat { background: var(--surface); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); min-width: 0; }
-.stat .v { font: 700 22px var(--f-mono); }
-.tablewrap { overflow-x: auto; }
+.lb-row.lead .lb-rank svg { width: 30px; height: 30px; fill: var(--gold); }
+.lb-avg { font: 800 28px var(--f-mono); text-align: right; line-height: 1; }
+.lb-row.lead .lb-avg { font-size: 34px; }
+.lb-avg small { display: block; font: 600 11px var(--f-body); color: var(--muted); margin-top: 4px; }
+.lead-tag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--gold); color: #241600; margin-left: 6px; vertical-align: 2px; }
+.bar { height: 7px; border-radius: 4px; background: var(--surface-3); overflow: hidden; margin-top: 8px; }
+.bar > i { display: block; height: 100%; background: var(--grad); border-radius: 4px; }
+.statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-width: 0; }
+.stat .v { font: 800 26px var(--f-mono); }
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
-th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 td.n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
 th.n { text-align: right; }
 
-.empty { text-align: center; padding: 28px 16px; border: 2px dashed var(--line); border-radius: 16px; color: var(--muted); }
+.empty { text-align: center; padding: 30px 18px; border: 2px dashed var(--line); border-radius: 20px; color: var(--muted); }
 .empty h3 { color: var(--ink); margin-bottom: 6px; }
-.notice { padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+.notice { padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); border: 1px solid rgba(255,79,123,.35); font-size: 14px; margin-bottom: 16px; }
+#joinView { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad) border-box; border: 2px solid transparent; }
 
 /* Rating sheet */
-.scrim { position: fixed; inset: 0; background: rgba(10,10,30,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
-.sheet { background: var(--bg); width: 100%; max-width: 720px; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding-top: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.scrim { position: fixed; inset: 0; background: rgba(5,3,14,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--bg); border: 1px solid var(--line); border-bottom: 0; width: 100%; max-width: 720px; max-height: 92vh; overflow-y: auto; border-radius: 26px 26px 0 0; padding-top: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet::before { content: ""; display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--surface-3); margin: -6px auto 4px; }
 .scores { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
 @media (max-width: 520px) { .scores { grid-template-columns: repeat(5, 1fr); } }
-.scores button { font: 700 18px var(--f-mono); padding: 12px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-.scores button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.crit { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: center; }
-.crit .lbl { font-size: 14px; font-weight: 600; }
+.scores button { font: 800 19px var(--f-mono); padding: 13px 0; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform .1s ease; }
+.scores button[aria-pressed="true"] { background: var(--grad); border-color: transparent; color: var(--accent-ink); transform: scale(1.06); box-shadow: 0 8px 20px rgba(255,79,123,.35); }
+.big-score { font: 800 44px var(--f-display); line-height: 1; text-align: center; min-height: 44px; }
+.crit { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: center; }
+.crit .lbl { font-size: 14px; font-weight: 700; }
 .crit-btns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.crit-btns button { font: 600 14px var(--f-mono); padding: 7px 0; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-.crit-btns button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.crit-btns button { font: 700 14px var(--f-mono); padding: 8px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.crit-btns button[aria-pressed="true"] { background: var(--mint); color: #062019; border-color: var(--mint); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips button { font: 500 13px var(--f-body); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-.chips button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
-.chips.neg button[aria-pressed="true"] { background: var(--surface-2); border-color: var(--ink); }
-.check { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; font-weight: 600; }
-.check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 30; max-width: calc(100% - 32px); }
+.chips button { font: 600 13px var(--f-body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 800; }
+.chips.neg button[aria-pressed="true"] { background: var(--surface-3); border-color: var(--muted); color: var(--ink); }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; font-weight: 700; }
+.check input { width: 22px; height: 22px; accent-color: var(--mint); margin: 0; flex: none; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); background: var(--grad); color: var(--accent-ink); padding: 11px 18px; border-radius: 14px; font-weight: 800; font-size: 14px; z-index: 30; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
 @media (prefers-reduced-motion: no-preference) {
-  .sheet { animation: up .22s ease-out; }
-  @keyframes up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+  .vinyl { animation: spin 6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .eq i { animation: eq 1s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay: -.3s; } .eq i:nth-child(3) { animation-delay: -.6s; } .eq i:nth-child(4) { animation-delay: -.15s; }
+  @keyframes eq { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+  .sheet { animation: up .25s cubic-bezier(.2,.8,.2,1); }
+  @keyframes up { from { transform: translateY(40px); opacity: .5; } to { transform: none; opacity: 1; } }
 }
 </style>
 
+<div class="glow" aria-hidden="true"></div>
 <div class="wrap">
   <header class="top">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true">3</div>
-      <div>
-        <h1>Drei am Tag</h1>
-        <p class="muted small">Jeden Tag 3 Lieder schicken. Die der anderen komplett hören und bewerten.</p>
+    <div class="vinyl" aria-hidden="true"><div class="label"><span>3</span></div></div>
+    <div class="min0">
+      <h1>Drei am <span class="grad-text">Tag</span></h1>
+      <p class="hero-sub">Jeden Tag 3 Lieder für deine Leute. Ihre Lieder komplett hören, ehrlich bewerten, und schauen, wer den besten Geschmack hat.</p>
+      <div class="hero-meta">
+        <span class="pill"><span class="live"></span><span id="countdown">Neue Runde um Mitternacht</span></span>
+        <span class="pill" id="meChip" hidden></span>
       </div>
     </div>
-    <div class="me-chip" id="meChip"></div>
   </header>
 
   <div id="status" class="notice" hidden></div>
@@ -182,18 +224,20 @@ th.n { text-align: right; }
   </section>
 
   <nav class="tabs" id="tabs" role="tablist" hidden>
-    <button role="tab" data-view="heute" aria-selected="true">Heute</button>
-    <button role="tab" data-view="bewerten" aria-selected="false">Bewerten<span class="badge" id="todoBadge" hidden></span></button>
-    <button role="tab" data-view="rang" aria-selected="false">Rangliste</button>
-    <button role="tab" data-view="verlauf" aria-selected="false">Verlauf</button>
+    <div class="inner">
+      <button role="tab" data-view="heute" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Heute</button>
+      <button role="tab" data-view="bewerten" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>Bewerten<span class="badge" id="todoBadge" hidden></span></button>
+      <button role="tab" data-view="rang" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Rangliste</button>
+      <button role="tab" data-view="verlauf" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Verlauf</button>
+    </div>
   </nav>
 
   <!-- HEUTE -->
   <section id="v-heute" class="stack-lg" hidden>
     <div class="stack">
-      <div class="spread">
-        <h2>Deine 3 Lieder heute</h2>
-        <span class="num muted" id="todayCount">0 / 3</span>
+      <div class="today-head">
+        <div><div class="eyebrow">Deine Lieder heute</div><h2 style="margin-top:4px">Was läuft heute?</h2></div>
+        <div class="row" style="gap:10px"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="big-count" id="todayCount">0<small>/3</small></span></div>
       </div>
       <div class="slots" id="mySlots"></div>
     </div>
@@ -285,7 +329,8 @@ th.n { text-align: right; }
   const TAGS_POS = ["Banger", "Ohrwurm", "Gänsehaut", "Auf Repeat", "Playlist-würdig", "Starker Text", "Geiler Beat", "Tolle Stimme", "Tanzbar", "Chillig", "Nostalgie", "Neu für mich", "Perfekt fürs Auto", "Hidden Gem"];
   const TAGS_NEG = ["Zu lang", "Langweilig", "Nicht mein Genre", "Kannte ich schon", "Zu ruhig", "Zu laut", "Skip-Kandidat", "Text nervt"];
   const QUICK = ["Direkt in meine Playlist.", "Hätte ich nie selbst gefunden.", "Der Refrain ist stark.", "Am Anfang zäh, dann gut.", "Nicht meins, aber okay.", "Mehr davon!", "Erinnert mich an früher."];
-  const COVER = ["#D92E73", "#3A4BD8", "#0E8F7E", "#C2571B", "#7C3AED", "#1F7A3A", "#B0216B", "#2B6CB0"];
+  const COVER = ["#FF4F7B,#FFC44D", "#7B4DFF,#FF4F7B", "#13B79A,#5B8CFF", "#FF8A3D,#FF3D6E", "#5B3DF5,#2EC5E0", "#FFC44D,#FF6B3D", "#E23DB5,#7B4DFF", "#2EC27E,#E8E04A"];
+  const SPOTIFY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.6.6 0 0 1-.9.2c-2.4-1.5-5.4-1.8-9-1a.6.6 0 1 1-.3-1.2c3.9-.9 7.2-.5 9.9 1.1.3.2.4.6.3.9zm1.2-2.7a.8.8 0 0 1-1.1.3c-2.7-1.7-6.9-2.2-10.2-1.2a.8.8 0 1 1-.4-1.5c3.7-1.1 8.4-.6 11.5 1.3.4.2.5.7.2 1.1zm.1-2.8C14.7 9 9.4 8.8 6.3 9.7a.9.9 0 1 1-.5-1.8c3.5-1.1 9.4-.9 13.1 1.3a.9.9 0 0 1-1 1.7z"/></svg>';
 
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -367,7 +412,7 @@ th.n { text-align: right; }
   /* ---------- Rendering ---------- */
   function cover(song) {
     const letter = (song.title || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<div class="cover" style="background:' + COVER[hash(song.by + song.id) % COVER.length] + '" aria-hidden="true">' + esc(letter) + "</div>";
+    return '<div class="cover" style="background:linear-gradient(135deg,' + COVER[hash(song.by + song.id) % COVER.length] + ')" aria-hidden="true">' + esc(letter) + "</div>";
   }
   function scorePill(n, count) {
     if (n == null) return '<span class="score-pill muted">–</span>';
@@ -392,7 +437,7 @@ th.n { text-align: right; }
     const joined = !!(me && S.players[me]);
     $("#joinView").hidden = !(S.loaded && db && me && !joined);
     $("#tabs").hidden = !joined;
-    $("#meChip").textContent = joined ? "Du spielst als " + name(me) : "";
+    $("#meChip").textContent = joined ? "Du: " + name(me) : ""; $("#meChip").hidden = !joined;
     for (const v of ["heute", "bewerten", "rang", "verlauf"]) $("#v-" + v).hidden = !joined || view !== v;
     document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === view)));
     if (!joined) return;
@@ -406,12 +451,12 @@ th.n { text-align: right; }
 
   function renderToday() {
     const mine = songsBy(me, today()).sort((a, b) => a.at - b.at);
-    $("#todayCount").textContent = mine.length + " / " + LIMIT;
+    $("#todayCount").innerHTML = mine.length + "<small>/" + LIMIT + "</small>";
     let html = "";
     for (let i = 0; i < LIMIT; i++) {
       const s = mine[i];
-      html += s ? '<div class="slot filled"><span class="n">#' + (i + 1) + '</span><span class="t">' + esc(s.title) + '</span><span class="small muted">' + esc(s.artist || "") + "</span></div>"
-        : '<div class="slot"><span class="n">#' + (i + 1) + '</span><span class="small muted">frei</span></div>';
+      html += s ? '<div class="slot filled"><span class="n">#' + (i + 1) + '</span><span class="t">' + esc(s.title) + '</span><span class="a">' + esc(s.artist || "") + "</span></div>"
+        : '<div class="slot"><span class="n">#' + (i + 1) + '</span><span class="small muted">noch frei</span></div>';
     }
     $("#mySlots").innerHTML = html;
     const full = mine.length >= LIMIT;
@@ -432,7 +477,7 @@ th.n { text-align: right; }
   function renderRate(todo) {
     $("#todoList").innerHTML = todo.length ? todo.map((s) =>
       '<div class="card stack">' + songHead(s) +
-      '<div class="row"><a class="btn" href="' + esc(s.url) + '" target="_blank" rel="noopener" data-open="' + esc(s.by + "/" + s.id) + '">Auf Spotify anhören</a>' +
+      '<div class="row"><a class="btn spotify" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Anhören</a>' +
       '<button class="btn primary" data-rate="' + esc(s.by + "/" + s.id) + '">Bewerten</button></div></div>').join("")
       : '<div class="empty"><h3>Alles bewertet</h3><p>Sobald jemand ein neues Lied schickt, taucht es hier auf.</p></div>';
     const done = allSongs().filter((s) => s.by !== me && myRatingFor(s)).slice(0, 30);
@@ -451,8 +496,8 @@ th.n { text-align: right; }
     }).sort((a, b) => (b.avg == null ? -1 : b.avg) - (a.avg == null ? -1 : a.avg) || b.n - a.n);
     const lead = rows[0] && rows[0].avg != null ? rows[0].avg : null;
     $("#leaderboard").innerHTML = rows.map((r, i) =>
-      '<div class="lb-row' + (i === 0 && lead != null ? " lead" : "") + '"><div class="lb-rank">' + (r.avg == null ? "–" : i + 1) + "</div>" +
-      '<div class="min0"><strong>' + esc(name(r.uid)) + (r.uid === me ? " (du)" : "") + "</strong>" + (i === 0 && lead != null ? ' <span class="tag" style="background:var(--accent);color:var(--accent-ink)">führt</span>' : "") +
+      '<div class="lb-row' + (i === 0 && lead != null ? " lead" : "") + '"><div class="lb-rank">' + (r.avg == null ? "–" : i === 0 ? '<svg viewBox="0 0 24 24" aria-label="Platz 1"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z"/></svg>' : i + 1) + "</div>" +
+      '<div class="min0"><strong>' + esc(name(r.uid)) + (r.uid === me ? " (du)" : "") + "</strong>" + (i === 0 && lead != null ? '<span class="lead-tag">führt</span>' : "") +
       '<div class="small muted">' + r.songs + " Lieder · " + r.n + " Bewertungen · " + r.total + " Punkte</div>" +
       '<div class="bar"><i style="width:' + (r.avg ? r.avg * 10 : 0) + '%"></i></div></div>' +
       '<div class="lb-avg">' + f1(r.avg) + "<small>von 10</small></div></div>").join("") ||
@@ -465,7 +510,7 @@ th.n { text-align: right; }
       const top = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => '<span class="tag">' + esc(t) + "</span>").join(" ");
       return '<div class="card stack" style="gap:8px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="num muted" style="width:26px;flex:none;font-weight:700">' + (i + 1) + '.</span><div class="min0" style="flex:1">' +
         songHead(x.s, scorePill(x.a, x.n)) + "</div></div>" + (top ? '<div class="chips" style="gap:4px;padding-left:38px">' + top + "</div>" : "") +
-        '<div style="padding-left:38px"><a class="btn sm" href="' + esc(x.s.url) + '" target="_blank" rel="noopener">Auf Spotify</a></div></div>';
+        '<div style="padding-left:38px"><a class="btn sm spotify" href="' + esc(x.s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Spotify</a></div></div>';
     }).join("") : '<p class="muted small">Noch keine bewerteten Lieder.</p>';
 
     let t = '<table><thead><tr><th>Person</th>' + CRITERIA.map(([, l]) => '<th class="n">' + l + "</th>").join("") + "</tr></thead><tbody>";
@@ -518,9 +563,9 @@ th.n { text-align: right; }
     sh.innerHTML =
       '<div class="spread"><h2 id="sheetTitle">Bewerten</h2><button class="btn sm ghost" data-close>Schließen</button></div>' +
       songHead(s) +
-      '<a class="btn" href="' + esc(s.url) + '" target="_blank" rel="noopener">Auf Spotify anhören</a>' +
+      '<a class="btn spotify" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Auf Spotify anhören</a>' +
       '<label class="check" for="listened"><input type="checkbox" id="listened"' + (R.listened ? " checked" : "") + '><span>Ich habe das Lied komplett gehört</span></label>' +
-      '<div class="stack" style="gap:8px"><div class="eyebrow">Gesamtnote</div><div class="scores" id="scoreBtns">' +
+      '<div class="stack" style="gap:8px"><div class="spread"><div class="eyebrow">Gesamtnote</div><div class="big-score grad-text" id="bigScore">' + (R.score || "") + '</div></div><div class="scores" id="scoreBtns">' +
       Array.from({ length: 10 }, (_, i) => '<button type="button" data-score="' + (i + 1) + '" aria-pressed="' + (R.score === i + 1) + '">' + (i + 1) + "</button>").join("") + "</div></div>" +
       '<div class="stack" style="gap:8px"><div class="eyebrow">Kriterien (optional, 1–5)</div>' +
       CRITERIA.map(([k, l]) => '<div class="crit"><span class="lbl">' + l + '</span><div class="crit-btns">' +
@@ -548,7 +593,7 @@ th.n { text-align: right; }
     if (e.target === $("#scrim") || e.target.closest("[data-close]")) return closeSheet();
     if (!R) return;
     const sc = e.target.closest("[data-score]");
-    if (sc) { R.score = Number(sc.dataset.score); document.querySelectorAll("#scoreBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b === sc))); return sheetValidate(); }
+    if (sc) { R.score = Number(sc.dataset.score); document.querySelectorAll("#scoreBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b === sc))); $("#bigScore").textContent = R.score; return sheetValidate(); }
     const cr = e.target.closest("[data-crit]");
     if (cr) { const k = cr.dataset.crit, v = Number(cr.dataset.v); R.crit[k] = R.crit[k] === v ? undefined : v;
       document.querySelectorAll('[data-crit="' + k + '"]').forEach((b) => b.setAttribute("aria-pressed", String(R.crit[k] === Number(b.dataset.v)))); return; }
@@ -648,7 +693,13 @@ th.n { text-align: right; }
   }
   // Re-render at midnight so "Heute" rolls over.
   let lastDay = today();
-  setInterval(() => { if (today() !== lastDay) { lastDay = today(); render(); } }, 60000);
+  function tick() {
+    const n = new Date(), m = new Date(n); m.setHours(24, 0, 0, 0);
+    const mins = Math.max(0, Math.round((m - n) / 60000)), h = Math.floor(mins / 60);
+    $("#countdown").textContent = "Neue Runde in " + (h ? h + " Std " : "") + (mins % 60) + " Min";
+    if (today() !== lastDay) { lastDay = today(); render(); }
+  }
+  tick(); setInterval(tick, 30000);
   boot();
 })();
 </script>
