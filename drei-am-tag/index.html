@@ -1,0 +1,654 @@
+<title>Drei am Tag</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow app column, sticky tab bar, cards only for songs; a bottom sheet for rating. */
+:root {
+  --bg: #EDEFF6;
+  --surface: #FFFFFF;
+  --surface-2: #E3E6F1;
+  --ink: #1B1D3A;
+  --muted: #5B5F83;
+  --line: #D3D6E5;
+  --accent: #D92E73;
+  --accent-soft: #F9DCE8;
+  --accent-ink: #FFFFFF;
+  --good: #1D8556;
+  --warn: #A9640A;
+  --shadow: 0 1px 2px rgba(27,29,58,.06), 0 6px 20px rgba(27,29,58,.06);
+  --f-display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11122A; --surface: #1B1D3B; --surface-2: #25284C; --ink: #ECEDF8; --muted: #A2A6C9;
+    --line: #30335C; --accent: #FF5A98; --accent-soft: #46203F; --accent-ink: #1A0712;
+    --good: #4FD39A; --warn: #F1B34C; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11122A; --surface: #1B1D3B; --surface-2: #25284C; --ink: #ECEDF8; --muted: #A2A6C9;
+  --line: #30335C; --accent: #FF5A98; --accent-soft: #46203F; --accent-ink: #1A0712;
+  --good: #4FD39A; --warn: #F1B34C; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 96px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 30px; font-weight: 800; line-height: 1.05; }
+h2 { font-size: 20px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack-lg { display: flex; flex-direction: column; gap: 28px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.min0 { min-width: 0; }
+
+header.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink); font-family: var(--f-display); font-weight: 800; font-size: 24px; }
+.me-chip { font-size: 13px; color: var(--muted); }
+
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px 0 10px; margin-bottom: 8px; }
+nav.tabs button { font: 600 14px var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 10px; padding: 10px 4px; cursor: pointer; position: relative; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
+nav.tabs .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 700 11px/18px var(--f-mono); }
+
+.card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+.panel { border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+
+button.btn, a.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--f-body); border-radius: 12px; padding: 11px 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+button.btn.primary, a.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn.ghost { background: transparent; }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, label.chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+
+input[type="text"], input[type="url"], textarea { width: 100%; font: 15px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
+textarea { min-height: 84px; resize: vertical; }
+label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+.err { color: var(--accent); font-size: 13px; font-weight: 600; }
+.ok { color: var(--good); font-size: 13px; font-weight: 600; }
+
+/* Today: three slots */
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.slot { border: 2px dashed var(--line); border-radius: 14px; padding: 10px; min-height: 76px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; min-width: 0; }
+.slot.filled { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.slot .t { font-weight: 600; font-size: 13px; line-height: 1.3; overflow-wrap: anywhere; }
+.slot .n { font: 700 12px var(--f-mono); color: var(--muted); }
+.dots { display: inline-flex; gap: 4px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); }
+.dot.on { background: var(--accent); border-color: var(--accent); }
+
+/* Song card */
+.song { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; }
+.cover { width: 52px; height: 52px; border-radius: 10px; display: grid; place-items: center; font: 800 20px var(--f-display); color: #fff; }
+.song .title { font-weight: 600; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.song .meta { font-size: 13px; color: var(--muted); }
+.note { font-size: 14px; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
+.score-pill { display: inline-flex; align-items: baseline; gap: 2px; font: 700 15px var(--f-mono); padding: 3px 9px; border-radius: 999px; background: var(--surface-2); }
+.score-pill.hot { background: var(--accent); color: var(--accent-ink); }
+.score-pill small { font-size: 11px; opacity: .7; }
+.tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+.review { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.review .c { overflow-wrap: anywhere; }
+
+/* Leaderboard */
+.lb { display: flex; flex-direction: column; gap: 8px; }
+.lb-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.lb-row.lead { outline: 2px solid var(--accent); }
+.lb-rank { font: 800 22px var(--f-display); color: var(--muted); text-align: center; }
+.lb-row.lead .lb-rank { color: var(--accent); }
+.lb-avg { font: 700 26px var(--f-mono); text-align: right; line-height: 1; }
+.lb-avg small { display: block; font: 500 11px var(--f-body); color: var(--muted); margin-top: 4px; }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); min-width: 0; }
+.stat .v { font: 700 22px var(--f-mono); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+th.n { text-align: right; }
+
+.empty { text-align: center; padding: 28px 16px; border: 2px dashed var(--line); border-radius: 16px; color: var(--muted); }
+.empty h3 { color: var(--ink); margin-bottom: 6px; }
+.notice { padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+
+/* Rating sheet */
+.scrim { position: fixed; inset: 0; background: rgba(10,10,30,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--bg); width: 100%; max-width: 720px; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding-top: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.scores { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+@media (max-width: 520px) { .scores { grid-template-columns: repeat(5, 1fr); } }
+.scores button { font: 700 18px var(--f-mono); padding: 12px 0; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.scores button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.crit { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: center; }
+.crit .lbl { font-size: 14px; font-weight: 600; }
+.crit-btns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.crit-btns button { font: 600 14px var(--f-mono); padding: 7px 0; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.crit-btns button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font: 500 13px var(--f-body); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.chips.neg button[aria-pressed="true"] { background: var(--surface-2); border-color: var(--ink); }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; font-weight: 600; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 30; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) {
+  .sheet { animation: up .22s ease-out; }
+  @keyframes up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">3</div>
+      <div>
+        <h1>Drei am Tag</h1>
+        <p class="muted small">Jeden Tag 3 Lieder schicken. Die der anderen komplett hören und bewerten.</p>
+      </div>
+    </div>
+    <div class="me-chip" id="meChip"></div>
+  </header>
+
+  <div id="status" class="notice" hidden></div>
+
+  <!-- Join -->
+  <section id="joinView" class="card stack" hidden>
+    <h2>Mitspielen</h2>
+    <p class="muted">Gib dir einen Spielnamen. Danach kannst du jeden Tag 3 Lieder schicken und die Lieder der anderen bewerten.</p>
+    <form id="joinForm" class="stack">
+      <label class="field" for="nickInput">Spielname
+        <input id="nickInput" type="text" maxlength="24" placeholder="z. B. Jonas" required>
+      </label>
+      <button class="btn primary" type="submit">Beitreten</button>
+    </form>
+  </section>
+
+  <nav class="tabs" id="tabs" role="tablist" hidden>
+    <button role="tab" data-view="heute" aria-selected="true">Heute</button>
+    <button role="tab" data-view="bewerten" aria-selected="false">Bewerten<span class="badge" id="todoBadge" hidden></span></button>
+    <button role="tab" data-view="rang" aria-selected="false">Rangliste</button>
+    <button role="tab" data-view="verlauf" aria-selected="false">Verlauf</button>
+  </nav>
+
+  <!-- HEUTE -->
+  <section id="v-heute" class="stack-lg" hidden>
+    <div class="stack">
+      <div class="spread">
+        <h2>Deine 3 Lieder heute</h2>
+        <span class="num muted" id="todayCount">0 / 3</span>
+      </div>
+      <div class="slots" id="mySlots"></div>
+    </div>
+
+    <form id="addForm" class="card stack">
+      <h3>Lied schicken</h3>
+      <label class="field" for="linkInput">Spotify-Link
+        <input id="linkInput" type="text" inputmode="url" autocomplete="off" placeholder="https://open.spotify.com/track/…">
+      </label>
+      <div class="two">
+        <label class="field" for="titleInput">Titel
+          <input id="titleInput" type="text" maxlength="80" placeholder="Songtitel">
+        </label>
+        <label class="field" for="artistInput">Interpret
+          <input id="artistInput" type="text" maxlength="80" placeholder="Künstler:in">
+        </label>
+      </div>
+      <label class="field" for="noteInput">Warum dieses Lied? (optional)
+        <input id="noteInput" type="text" maxlength="140" placeholder="Achte auf den Refrain bei 1:40">
+      </label>
+      <div class="spread">
+        <span id="addMsg" class="small muted">In Spotify: Teilen → Link kopieren, dann hier einfügen.</span>
+        <button class="btn primary" type="submit" id="addBtn">Schicken</button>
+      </div>
+    </form>
+
+    <div class="stack">
+      <h2>Die Runde heute</h2>
+      <div id="groupToday" class="stack"></div>
+    </div>
+  </section>
+
+  <!-- BEWERTEN -->
+  <section id="v-bewerten" class="stack-lg" hidden>
+    <div class="stack">
+      <h2>Noch zu bewerten</h2>
+      <p class="muted small">Erst komplett auf Spotify anhören, dann bewerten.</p>
+      <div id="todoList" class="stack"></div>
+    </div>
+    <div class="stack">
+      <h2>Schon bewertet</h2>
+      <div id="doneList" class="stack"></div>
+    </div>
+  </section>
+
+  <!-- RANGLISTE -->
+  <section id="v-rang" class="stack-lg" hidden>
+    <div class="stack">
+      <h2>Wer führt?</h2>
+      <p class="muted small">Durchschnitt aller Bewertungen, die deine Lieder von den anderen bekommen haben.</p>
+      <div id="leaderboard" class="lb"></div>
+    </div>
+    <div class="stack">
+      <h2>Beste Lieder</h2>
+      <div id="topSongs" class="stack"></div>
+    </div>
+    <div class="stack">
+      <h2>Kriterien</h2>
+      <p class="muted small">Durchschnitt pro Kriterium (1–5), das die Lieder jeder Person bekommen haben.</p>
+      <div id="critTable" class="tablewrap"></div>
+    </div>
+    <div class="stack" id="matrixBlock">
+      <h2>Wer bewertet wen wie?</h2>
+      <p class="muted small">Zeile gibt Spalte im Schnitt.</p>
+      <div id="matrix" class="tablewrap"></div>
+    </div>
+    <div class="stack">
+      <h2>Zahlen</h2>
+      <div id="playerStats" class="statgrid"></div>
+    </div>
+  </section>
+
+  <!-- VERLAUF -->
+  <section id="v-verlauf" class="stack-lg" hidden>
+    <div id="history" class="stack-lg"></div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet stack" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheet"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  const LIMIT = 3;
+  const CRITERIA = [["beat", "Beat"], ["text", "Text"], ["stimme", "Stimme"], ["vibe", "Vibe"], ["prod", "Produktion"]];
+  const TAGS_POS = ["Banger", "Ohrwurm", "Gänsehaut", "Auf Repeat", "Playlist-würdig", "Starker Text", "Geiler Beat", "Tolle Stimme", "Tanzbar", "Chillig", "Nostalgie", "Neu für mich", "Perfekt fürs Auto", "Hidden Gem"];
+  const TAGS_NEG = ["Zu lang", "Langweilig", "Nicht mein Genre", "Kannte ich schon", "Zu ruhig", "Zu laut", "Skip-Kandidat", "Text nervt"];
+  const QUICK = ["Direkt in meine Playlist.", "Hätte ich nie selbst gefunden.", "Der Refrain ist stark.", "Am Anfang zäh, dann gut.", "Nicht meins, aber okay.", "Mehr davon!", "Erinnert mich an früher."];
+  const COVER = ["#D92E73", "#3A4BD8", "#0E8F7E", "#C2571B", "#7C3AED", "#1F7A3A", "#B0216B", "#2B6CB0"];
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const dayStr = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const today = () => dayStr(new Date());
+  const fmtDay = (s) => {
+    if (s === today()) return "Heute";
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    if (s === dayStr(y)) return "Gestern";
+    const [a, b, c] = s.split("-").map(Number);
+    return new Date(a, b - 1, c).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" });
+  };
+  const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const f1 = (n) => n == null ? "–" : n.toFixed(1).replace(".", ",");
+  const hash = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+
+  let db = null, user = null, me = null;
+  const S = { players: {}, songs: {}, ratings: {}, profiles: {}, loaded: false };
+  const watched = {};
+  let view = "heute";
+  try { const v = localStorage.getItem("dat-view"); if (v) view = v; } catch (e) {}
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+  function setStatus(msg) { const s = $("#status"); s.textContent = msg || ""; s.hidden = !msg; }
+
+  function name(uid) {
+    const p = S.players[uid];
+    return (p && p.nick) || (S.profiles[uid] && S.profiles[uid].name) || "Mitspieler";
+  }
+  async function resolveNames() {
+    if (!user || !user.profiles) return;
+    const ids = Object.keys(S.players);
+    if (!ids.length) return;
+    try { S.profiles = await user.profiles(ids); } catch (e) {}
+  }
+
+  /* ---------- Spotify ---------- */
+  function parseSpotify(raw) {
+    const s = String(raw || "").trim();
+    const urlM = s.match(/https?:\/\/[^\s]+/);
+    const u = urlM ? urlM[0] : s;
+    const tr = u.match(/(?:open\.spotify\.com\/(?:intl-[a-z]{2}(?:-[a-zA-Z]{2})?\/)?track\/|spotify:track:)([A-Za-z0-9]{22})/);
+    if (tr) return { trackId: tr[1], url: "https://open.spotify.com/track/" + tr[1] };
+    if (/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(album|playlist|artist|episode|show)\//.test(u)) return { error: "Bitte den Link zu einem einzelnen Lied nehmen, nicht zu Album oder Playlist." };
+    if (/^https:\/\/(spotify\.link|spoti\.fi)\/[A-Za-z0-9]+/.test(u)) return { trackId: null, url: u };
+    return { error: "Das ist kein Spotify-Lied-Link. Er sieht so aus: open.spotify.com/track/…" };
+  }
+
+  /* ---------- Derived data ---------- */
+  function allSongs() {
+    const out = [];
+    for (const uid of Object.keys(S.songs)) for (const s of S.songs[uid]) out.push(s);
+    return out.sort((a, b) => b.at - a.at);
+  }
+  function allRatings() {
+    const out = [];
+    for (const uid of Object.keys(S.ratings)) for (const r of S.ratings[uid]) out.push(r);
+    return out;
+  }
+  function ratingsFor(song) { return allRatings().filter((r) => r.owner === song.by && r.songId === song.id && r.by !== song.by); }
+  function myRatingFor(song) { return (S.ratings[me] || []).find((r) => r.owner === song.by && r.songId === song.id); }
+  function songsBy(uid, day) { return (S.songs[uid] || []).filter((s) => !day || s.day === day); }
+  function todoForMe() {
+    if (!me || !S.players[me]) return [];
+    return allSongs().filter((s) => s.by !== me && !myRatingFor(s)).sort((a, b) => a.at - b.at);
+  }
+  function missedSlots(uid) {
+    const p = S.players[uid]; if (!p || !p.joinedDay) return 0;
+    const [a, b, c] = p.joinedDay.split("-").map(Number);
+    const d = new Date(a, b - 1, c); const t = today(); let miss = 0, guard = 0;
+    while (dayStr(d) < t && guard++ < 3650) { miss += Math.max(0, LIMIT - songsBy(uid, dayStr(d)).length); d.setDate(d.getDate() + 1); }
+    return miss;
+  }
+  function openFor(uid) { return allSongs().filter((s) => s.by !== uid && !(S.ratings[uid] || []).some((r) => r.owner === s.by && r.songId === s.id)).length; }
+
+  /* ---------- Rendering ---------- */
+  function cover(song) {
+    const letter = (song.title || "?").trim().charAt(0).toUpperCase() || "?";
+    return '<div class="cover" style="background:' + COVER[hash(song.by + song.id) % COVER.length] + '" aria-hidden="true">' + esc(letter) + "</div>";
+  }
+  function scorePill(n, count) {
+    if (n == null) return '<span class="score-pill muted">–</span>';
+    return '<span class="score-pill' + (n >= 8 ? " hot" : "") + '">' + f1(n) + (count != null ? " <small>(" + count + ")</small>" : "") + "</span>";
+  }
+  function songHead(s, extra) {
+    return '<div class="song">' + cover(s) + '<div class="stack min0" style="gap:6px">' +
+      '<div class="spread" style="align-items:flex-start"><div class="min0"><div class="title">' + esc(s.title || "Unbenanntes Lied") + "</div>" +
+      '<div class="meta">' + esc(s.artist || "Unbekannt") + " · von " + esc(name(s.by)) + " · " + esc(fmtDay(s.day)) + "</div></div>" + (extra || "") + "</div>" +
+      (s.note ? '<div class="note">„' + esc(s.note) + "“</div>" : "") + "</div></div>";
+  }
+  function reviewHtml(r) {
+    const tags = (r.tags || []).map((t) => '<span class="tag">' + esc(t) + "</span>").join(" ");
+    const crit = CRITERIA.filter(([k]) => r.crit && r.crit[k]).map(([k, l]) => l + " " + r.crit[k]).join(" · ");
+    return '<div class="review"><div class="spread"><strong>' + esc(name(r.by)) + "</strong>" + scorePill(r.score) + "</div>" +
+      (crit ? '<div class="small muted num">' + esc(crit) + "</div>" : "") +
+      (tags ? '<div class="chips" style="gap:4px">' + tags + "</div>" : "") +
+      (r.comment ? '<div class="c">' + esc(r.comment) + "</div>" : "") + "</div>";
+  }
+
+  function render() {
+    const joined = !!(me && S.players[me]);
+    $("#joinView").hidden = !(S.loaded && db && me && !joined);
+    $("#tabs").hidden = !joined;
+    $("#meChip").textContent = joined ? "Du spielst als " + name(me) : "";
+    for (const v of ["heute", "bewerten", "rang", "verlauf"]) $("#v-" + v).hidden = !joined || view !== v;
+    document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === view)));
+    if (!joined) return;
+    const todo = todoForMe();
+    const badge = $("#todoBadge"); badge.hidden = !todo.length; badge.textContent = todo.length;
+    if (view === "heute") renderToday();
+    if (view === "bewerten") renderRate(todo);
+    if (view === "rang") renderStats();
+    if (view === "verlauf") renderHistory();
+  }
+
+  function renderToday() {
+    const mine = songsBy(me, today()).sort((a, b) => a.at - b.at);
+    $("#todayCount").textContent = mine.length + " / " + LIMIT;
+    let html = "";
+    for (let i = 0; i < LIMIT; i++) {
+      const s = mine[i];
+      html += s ? '<div class="slot filled"><span class="n">#' + (i + 1) + '</span><span class="t">' + esc(s.title) + '</span><span class="small muted">' + esc(s.artist || "") + "</span></div>"
+        : '<div class="slot"><span class="n">#' + (i + 1) + '</span><span class="small muted">frei</span></div>';
+    }
+    $("#mySlots").innerHTML = html;
+    const full = mine.length >= LIMIT;
+    $("#addBtn").disabled = full;
+    if (full) { $("#addMsg").className = "ok"; $("#addMsg").textContent = "Fertig für heute. Morgen geht's weiter."; }
+
+    const ids = Object.keys(S.players).sort((a, b) => name(a).localeCompare(name(b)));
+    $("#groupToday").innerHTML = ids.map((uid) => {
+      const n = songsBy(uid, today()).length;
+      const open = openFor(uid);
+      let dots = ""; for (let i = 0; i < LIMIT; i++) dots += '<span class="dot' + (i < n ? " on" : "") + '"></span>';
+      return '<div class="panel spread"><div class="min0"><strong>' + esc(name(uid)) + (uid === me ? " (du)" : "") + "</strong>" +
+        '<div class="small muted">' + (open ? open + " Lied" + (open === 1 ? "" : "er") + " noch nicht bewertet" : "Alles bewertet") + "</div></div>" +
+        '<div class="row"><span class="dots" aria-label="' + n + ' von 3 geschickt">' + dots + '</span><span class="num small muted">' + n + "/" + LIMIT + "</span></div></div>";
+    }).join("") + (ids.length < 2 ? '<div class="empty"><h3>Noch allein hier</h3><p>Teile den Link dieser Seite mit deinen Freunden. Sobald sie beitreten, erscheinen sie hier.</p></div>' : "");
+  }
+
+  function renderRate(todo) {
+    $("#todoList").innerHTML = todo.length ? todo.map((s) =>
+      '<div class="card stack">' + songHead(s) +
+      '<div class="row"><a class="btn" href="' + esc(s.url) + '" target="_blank" rel="noopener" data-open="' + esc(s.by + "/" + s.id) + '">Auf Spotify anhören</a>' +
+      '<button class="btn primary" data-rate="' + esc(s.by + "/" + s.id) + '">Bewerten</button></div></div>').join("")
+      : '<div class="empty"><h3>Alles bewertet</h3><p>Sobald jemand ein neues Lied schickt, taucht es hier auf.</p></div>';
+    const done = allSongs().filter((s) => s.by !== me && myRatingFor(s)).slice(0, 30);
+    $("#doneList").innerHTML = done.length ? done.map((s) => {
+      const r = myRatingFor(s);
+      return '<div class="card stack">' + songHead(s, scorePill(r.score)) +
+        '<div class="row"><a class="btn sm" href="' + esc(s.url) + '" target="_blank" rel="noopener">Spotify</a><button class="btn sm ghost" data-rate="' + esc(s.by + "/" + s.id) + '">Bewertung ändern</button></div></div>';
+    }).join("") : '<p class="muted small">Noch nichts bewertet.</p>';
+  }
+
+  function renderStats() {
+    const ids = Object.keys(S.players);
+    const rows = ids.map((uid) => {
+      const recv = allRatings().filter((r) => r.owner === uid && r.by !== uid);
+      return { uid, avg: avg(recv.map((r) => r.score)), n: recv.length, total: recv.reduce((a, r) => a + r.score, 0), songs: songsBy(uid).length };
+    }).sort((a, b) => (b.avg == null ? -1 : b.avg) - (a.avg == null ? -1 : a.avg) || b.n - a.n);
+    const lead = rows[0] && rows[0].avg != null ? rows[0].avg : null;
+    $("#leaderboard").innerHTML = rows.map((r, i) =>
+      '<div class="lb-row' + (i === 0 && lead != null ? " lead" : "") + '"><div class="lb-rank">' + (r.avg == null ? "–" : i + 1) + "</div>" +
+      '<div class="min0"><strong>' + esc(name(r.uid)) + (r.uid === me ? " (du)" : "") + "</strong>" + (i === 0 && lead != null ? ' <span class="tag" style="background:var(--accent);color:var(--accent-ink)">führt</span>' : "") +
+      '<div class="small muted">' + r.songs + " Lieder · " + r.n + " Bewertungen · " + r.total + " Punkte</div>" +
+      '<div class="bar"><i style="width:' + (r.avg ? r.avg * 10 : 0) + '%"></i></div></div>' +
+      '<div class="lb-avg">' + f1(r.avg) + "<small>von 10</small></div></div>").join("") ||
+      '<div class="empty"><h3>Noch keine Bewertungen</h3><p>Die Rangliste füllt sich, sobald die ersten Lieder bewertet sind.</p></div>';
+
+    const scored = allSongs().map((s) => { const rs = ratingsFor(s); return { s, a: avg(rs.map((r) => r.score)), n: rs.length, rs }; })
+      .filter((x) => x.a != null).sort((a, b) => b.a - a.a || b.n - a.n).slice(0, 10);
+    $("#topSongs").innerHTML = scored.length ? scored.map((x, i) => {
+      const tags = {}; x.rs.forEach((r) => (r.tags || []).forEach((t) => tags[t] = (tags[t] || 0) + 1));
+      const top = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => '<span class="tag">' + esc(t) + "</span>").join(" ");
+      return '<div class="card stack" style="gap:8px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="num muted" style="width:26px;flex:none;font-weight:700">' + (i + 1) + '.</span><div class="min0" style="flex:1">' +
+        songHead(x.s, scorePill(x.a, x.n)) + "</div></div>" + (top ? '<div class="chips" style="gap:4px;padding-left:38px">' + top + "</div>" : "") +
+        '<div style="padding-left:38px"><a class="btn sm" href="' + esc(x.s.url) + '" target="_blank" rel="noopener">Auf Spotify</a></div></div>';
+    }).join("") : '<p class="muted small">Noch keine bewerteten Lieder.</p>';
+
+    let t = '<table><thead><tr><th>Person</th>' + CRITERIA.map(([, l]) => '<th class="n">' + l + "</th>").join("") + "</tr></thead><tbody>";
+    for (const uid of ids) {
+      const recv = allRatings().filter((r) => r.owner === uid && r.by !== uid);
+      t += "<tr><td>" + esc(name(uid)) + "</td>" + CRITERIA.map(([k]) => '<td class="n">' + f1(avg(recv.map((r) => r.crit && r.crit[k]).filter(Boolean))) + "</td>").join("") + "</tr>";
+    }
+    $("#critTable").innerHTML = t + "</tbody></table>";
+
+    $("#matrixBlock").hidden = ids.length < 2;
+    let m = "<table><thead><tr><th>gibt ↓ / bekommt →</th>" + ids.map((u) => '<th class="n">' + esc(name(u)) + "</th>").join("") + "</tr></thead><tbody>";
+    for (const a of ids) {
+      m += "<tr><td>" + esc(name(a)) + "</td>" + ids.map((b) => a === b ? '<td class="n muted">·</td>' : '<td class="n">' + f1(avg((S.ratings[a] || []).filter((r) => r.owner === b).map((r) => r.score))) + "</td>").join("") + "</tr>";
+    }
+    $("#matrix").innerHTML = m + "</tbody></table>";
+
+    $("#playerStats").innerHTML = ids.map((uid) => {
+      const given = S.ratings[uid] || [];
+      const tags = {}; allRatings().filter((r) => r.owner === uid).forEach((r) => (r.tags || []).forEach((x) => tags[x] = (tags[x] || 0) + 1));
+      const topTag = Object.entries(tags).sort((a, b) => b[1] - a[1])[0];
+      const miss = missedSlots(uid);
+      return '<div class="stat stack" style="gap:6px"><strong>' + esc(name(uid)) + "</strong>" +
+        '<div class="small muted">Gibt im Schnitt</div><div class="v">' + f1(avg(given.map((r) => r.score))) + "</div>" +
+        '<div class="small">Bewertet: <span class="num">' + given.length + "</span></div>" +
+        '<div class="small">Verpasste Lieder: <span class="num" style="color:' + (miss ? "var(--warn)" : "var(--good)") + '">' + miss + "</span></div>" +
+        '<div class="small">Häufigstes Etikett: ' + (topTag ? esc(topTag[0]) : "–") + "</div></div>";
+    }).join("");
+  }
+
+  function renderHistory() {
+    const songs = allSongs(); const byDay = {};
+    songs.forEach((s) => (byDay[s.day] = byDay[s.day] || []).push(s));
+    const days = Object.keys(byDay).sort().reverse();
+    $("#history").innerHTML = days.length ? days.map((d) => '<div class="stack"><div class="spread"><h2>' + esc(fmtDay(d)) + '</h2><span class="small muted">' + byDay[d].length + " Lieder</span></div>" +
+      byDay[d].map((s) => { const rs = ratingsFor(s); const canDel = s.by === me && s.day === today() && !rs.length;
+        return '<div class="card stack">' + songHead(s, scorePill(avg(rs.map((r) => r.score)), rs.length)) +
+          '<div class="row"><a class="btn sm" href="' + esc(s.url) + '" target="_blank" rel="noopener">Spotify</a>' + (canDel ? '<button class="btn sm ghost" data-del="' + esc(s.id) + '">Löschen</button>' : "") + "</div>" +
+          rs.map(reviewHtml).join("") + "</div>"; }).join("") + "</div>").join("")
+      : '<div class="empty"><h3>Noch keine Lieder</h3><p>Schick unter „Heute“ dein erstes Lied.</p></div>';
+  }
+
+  /* ---------- Rating sheet ---------- */
+  let R = null;
+  function findSong(key) { const [by, id] = key.split("/"); return (S.songs[by] || []).find((s) => s.id === id); }
+  function openSheet(key) {
+    const s = findSong(key); if (!s) return;
+    const prev = myRatingFor(s);
+    R = { song: s, score: prev ? prev.score : null, crit: Object.assign({}, prev && prev.crit), tags: new Set(prev ? prev.tags : []), listened: !!prev, comment: prev ? prev.comment || "" : "" };
+    const sh = $("#sheet");
+    sh.innerHTML =
+      '<div class="spread"><h2 id="sheetTitle">Bewerten</h2><button class="btn sm ghost" data-close>Schließen</button></div>' +
+      songHead(s) +
+      '<a class="btn" href="' + esc(s.url) + '" target="_blank" rel="noopener">Auf Spotify anhören</a>' +
+      '<label class="check" for="listened"><input type="checkbox" id="listened"' + (R.listened ? " checked" : "") + '><span>Ich habe das Lied komplett gehört</span></label>' +
+      '<div class="stack" style="gap:8px"><div class="eyebrow">Gesamtnote</div><div class="scores" id="scoreBtns">' +
+      Array.from({ length: 10 }, (_, i) => '<button type="button" data-score="' + (i + 1) + '" aria-pressed="' + (R.score === i + 1) + '">' + (i + 1) + "</button>").join("") + "</div></div>" +
+      '<div class="stack" style="gap:8px"><div class="eyebrow">Kriterien (optional, 1–5)</div>' +
+      CRITERIA.map(([k, l]) => '<div class="crit"><span class="lbl">' + l + '</span><div class="crit-btns">' +
+        [1, 2, 3, 4, 5].map((v) => '<button type="button" data-crit="' + k + '" data-v="' + v + '" aria-pressed="' + (R.crit[k] === v) + '">' + v + "</button>").join("") + "</div></div>").join("") + "</div>" +
+      '<div class="stack" style="gap:8px"><div class="eyebrow">Gefällt mir</div><div class="chips">' + TAGS_POS.map(chip).join("") + "</div></div>" +
+      '<div class="stack" style="gap:8px"><div class="eyebrow">Eher nicht</div><div class="chips neg">' + TAGS_NEG.map(chip).join("") + "</div></div>" +
+      '<div class="stack" style="gap:8px"><div class="eyebrow">Kommentar</div><div class="chips" id="quick">' + QUICK.map((q) => '<button type="button" data-quick="' + esc(q) + '">' + esc(q) + "</button>").join("") + "</div>" +
+      '<textarea id="commentInput" maxlength="600" placeholder="Was denkst du über das Lied?">' + esc(R.comment) + "</textarea></div>" +
+      '<div class="spread"><span id="sheetMsg" class="small muted"></span><button class="btn primary" id="saveRating" type="button">Bewertung speichern</button></div>';
+    $("#scrim").hidden = false;
+    document.body.style.overflow = "hidden";
+    sheetValidate();
+  }
+  function chip(t) { return '<button type="button" data-tag="' + esc(t) + '" aria-pressed="' + R.tags.has(t) + '">' + esc(t) + "</button>"; }
+  function closeSheet() { $("#scrim").hidden = true; document.body.style.overflow = ""; R = null; }
+  function sheetValidate() {
+    if (!R) return;
+    const msg = $("#sheetMsg");
+    const listened = $("#listened").checked;
+    $("#saveRating").disabled = !(listened && R.score);
+    msg.className = "small muted";
+    msg.textContent = !listened ? "Erst komplett anhören und abhaken." : !R.score ? "Wähle eine Note von 1 bis 10." : "Note " + R.score + " von 10";
+  }
+  $("#scrim").addEventListener("click", async (e) => {
+    if (e.target === $("#scrim") || e.target.closest("[data-close]")) return closeSheet();
+    if (!R) return;
+    const sc = e.target.closest("[data-score]");
+    if (sc) { R.score = Number(sc.dataset.score); document.querySelectorAll("#scoreBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b === sc))); return sheetValidate(); }
+    const cr = e.target.closest("[data-crit]");
+    if (cr) { const k = cr.dataset.crit, v = Number(cr.dataset.v); R.crit[k] = R.crit[k] === v ? undefined : v;
+      document.querySelectorAll('[data-crit="' + k + '"]').forEach((b) => b.setAttribute("aria-pressed", String(R.crit[k] === Number(b.dataset.v)))); return; }
+    const tg = e.target.closest("[data-tag]");
+    if (tg) { const t = tg.dataset.tag; R.tags.has(t) ? R.tags.delete(t) : R.tags.add(t); tg.setAttribute("aria-pressed", String(R.tags.has(t))); return; }
+    const q = e.target.closest("[data-quick]");
+    if (q) { const ta = $("#commentInput"); ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + q.dataset.quick; return; }
+    if (e.target.closest("#saveRating")) {
+      const btn = $("#saveRating"); btn.disabled = true;
+      const s = R.song;
+      const crit = {}; for (const [k] of CRITERIA) if (R.crit[k]) crit[k] = R.crit[k];
+      const body = { owner: s.by, songId: s.id, score: R.score, crit, tags: Array.from(R.tags), comment: $("#commentInput").value.trim().slice(0, 600), listened: true, at: Date.now() };
+      try {
+        await db.doc("players/" + me + "/ratings/" + s.by + "__" + s.id).set(body);
+        closeSheet(); toast("Bewertung gespeichert");
+      } catch (err) { $("#sheetMsg").className = "err"; $("#sheetMsg").textContent = "Speichern hat nicht geklappt. Versuch es gleich noch mal."; btn.disabled = false; }
+    }
+  });
+  $("#scrim").addEventListener("change", (e) => { if (e.target.id === "listened") sheetValidate(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && R) closeSheet(); });
+
+  /* ---------- Actions ---------- */
+  $("#tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]"); if (!b) return;
+    view = b.dataset.view; try { localStorage.setItem("dat-view", view); } catch (err) {}
+    render(); window.scrollTo(0, 0);
+  });
+  document.addEventListener("click", async (e) => {
+    const r = e.target.closest("[data-rate]"); if (r) return openSheet(r.dataset.rate);
+    const d = e.target.closest("[data-del]");
+    if (d) {
+      if (d.dataset.confirm !== "1") { d.dataset.confirm = "1"; d.textContent = "Wirklich löschen?"; return; }
+      try { await db.doc("players/" + me + "/songs/" + d.dataset.del).delete(); toast("Lied gelöscht"); } catch (err) { toast("Löschen hat nicht geklappt"); }
+    }
+  });
+  $("#linkInput").addEventListener("input", () => {
+    const v = $("#linkInput").value; const m = $("#addMsg");
+    if (!v.trim()) { m.className = "small muted"; m.textContent = "In Spotify: Teilen → Link kopieren, dann hier einfügen."; return; }
+    const p = parseSpotify(v);
+    if (p.error) { m.className = "err"; m.textContent = p.error; }
+    else { m.className = "ok"; m.textContent = "Link erkannt. Trag noch Titel und Interpret ein."; }
+    // Spotify share text like "Song · Artist" before the URL: prefill
+    const pre = v.split(/https?:\/\//)[0].trim();
+    if (pre && !$("#titleInput").value) { const parts = pre.replace(/[„“"]/g, "").split(/\s[·\-–]\s|\sby\s|\svon\s/); $("#titleInput").value = (parts[0] || "").trim().slice(0, 80); if (parts[1] && !$("#artistInput").value) $("#artistInput").value = parts[1].trim().slice(0, 80); }
+  });
+  $("#addForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const m = $("#addMsg");
+    const fail = (t) => { m.className = "err"; m.textContent = t; };
+    if (songsBy(me, today()).length >= LIMIT) return fail("Du hast heute schon 3 Lieder geschickt.");
+    const p = parseSpotify($("#linkInput").value);
+    if (p.error) return fail(p.error);
+    const title = $("#titleInput").value.trim();
+    if (!title) return fail("Bitte den Songtitel eintragen.");
+    if (p.trackId) { const dup = allSongs().find((s) => s.trackId === p.trackId); if (dup) return fail("Das Lied hat " + name(dup.by) + " schon am " + fmtDay(dup.day) + " geschickt."); }
+    const btn = $("#addBtn"); btn.disabled = true;
+    try {
+      await db.collection("players/" + me + "/songs").add({ url: p.url, trackId: p.trackId, title, artist: $("#artistInput").value.trim(), note: $("#noteInput").value.trim(), day: today(), at: Date.now() });
+      ["#linkInput", "#titleInput", "#artistInput", "#noteInput"].forEach((s) => $(s).value = "");
+      m.className = "ok"; m.textContent = "Geschickt!"; toast("Lied geschickt");
+    } catch (err) { fail("Schicken hat nicht geklappt. Versuch es gleich noch mal."); }
+    btn.disabled = songsBy(me, today()).length >= LIMIT;
+  });
+  $("#joinForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nick = $("#nickInput").value.trim().slice(0, 24); if (!nick) return;
+    try { await db.doc("players/" + me).set({ nick, joinedAt: Date.now(), joinedDay: today() }); toast("Willkommen, " + nick); }
+    catch (err) { setStatus("Beitreten hat nicht geklappt. Du brauchst mindestens Zugriff zum Mitmachen auf diesen Link. Frag die Person, die ihn geteilt hat."); }
+  });
+
+  /* ---------- Data ---------- */
+  function watchPlayer(uid) {
+    if (watched[uid]) return; watched[uid] = true;
+    db.collection("players/" + uid + "/songs").onSnapshot((snap) => {
+      S.songs[uid] = snap.docs.map((d) => Object.assign({ id: d.id, by: uid }, d.data())); render();
+    }, () => {});
+    db.collection("players/" + uid + "/ratings").onSnapshot((snap) => {
+      S.ratings[uid] = snap.docs.map((d) => Object.assign({ by: uid }, d.data())); render();
+    }, () => {});
+  }
+
+  async function boot() {
+    render();
+    if (!window.claude || !window.claude.use) { setStatus("Öffne diese Seite über ihren claude.ai-Link und melde dich an, um mitzuspielen."); return; }
+    const timer = setTimeout(() => { if (!S.loaded) setStatus("Die Daten sind gerade nicht erreichbar. Prüfe deine Verbindung."); }, 10000);
+    [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db) { clearTimeout(timer); setStatus("Zum Mitspielen musst du bei claude.ai angemeldet sein."); return; }
+    me = user ? await user.id() : null;
+    if (!me) setStatus("Wir können dich nicht zuordnen. Melde dich bei claude.ai an, um mitzuspielen.");
+    db.collection("players").onSnapshot(async (snap) => {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); if (me) setStatus(""); }
+      S.loaded = true;
+      const next = {}; snap.docs.forEach((d) => { next[d.id] = d.data(); });
+      S.players = next; Object.keys(next).forEach(watchPlayer);
+      render(); await resolveNames(); render();
+    }, (err) => { clearTimeout(timer); S.loaded = true; setStatus("Die Daten konnten nicht geladen werden. Lade die Seite später neu."); render(); });
+  }
+  // Re-render at midnight so "Heute" rolls over.
+  let lastDay = today();
+  setInterval(() => { if (today() !== lastDay) { lastDay = today(); render(); } }, 60000);
+  boot();
+})();
+</script>
