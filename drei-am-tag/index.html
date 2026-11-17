@@ -107,7 +107,7 @@ button.btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, label.check:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
 .btn.sm { padding: 8px 12px; font-size: 13px; border-radius: 11px; }
 
-input[type="text"], input[type="password"], textarea { width: 100%; font: 500 15px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
+input[type="text"], input[type="password"], textarea { width: 100%; font: 500 16px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
 input::placeholder, textarea::placeholder { color: #6E6596; }
 textarea { min-height: 84px; resize: vertical; }
 label.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
@@ -224,6 +224,27 @@ button.pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; s
 .pw-toggle:hover { color: var(--ink); }
 .pw-toggle svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pw-toggle .eye-closed { display: none; }
+/* Fixed windows: no iOS zoom, sticky compact header in the app, locked background under sheets */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button, a, label, input, textarea { touch-action: manipulation; }
+.sheet { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.scrim { overscroll-behavior: contain; }
+body.locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+#groupBtn { max-width: 100%; min-width: 0; }
+#groupName { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#groupBtn svg { flex: none; }
+body.app header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 12;
+  margin: -18px calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 18px calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  gap: 12px; background: rgba(13,10,29,.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+body.app .vinyl { width: 46px; height: 46px; }
+body.app .vinyl .label { font-size: 12px; }
+body.app h1 { font-size: 22px; }
+body.app .hero-sub { display: none; }
+body.app .hero-meta { margin-top: 6px; flex-wrap: nowrap; min-width: 0; }
+body.app .hero-meta .pill { white-space: nowrap; flex: none; }
+body.app .hero-meta #groupBtn { flex: 0 1 auto; }
+body.app #countdown { font-size: 11px; }
 .pw-toggle[aria-pressed="true"] .eye-open { display: none; }
 .pw-toggle[aria-pressed="true"] .eye-closed { display: block; }
 </style>

@@ -127,6 +127,7 @@
     for (const k of Object.keys(sections)) $(sections[k]).hidden = screen !== k;
     const inApp = screen === "app";
     $("#tabs").hidden = !inApp;
+    document.body.classList.toggle("app", inApp);
     $("#groupBtn").hidden = !(me && (inApp || (screen === "start" && groups.length)));
     $("#groupName").textContent = group ? group.name : "Gruppen";
     for (const v of ["heute", "bewerten", "rang", "verlauf"]) $("#v-" + v).hidden = !inApp || view !== v;
@@ -254,9 +255,19 @@
   let sheetMode = null;  // "rate" | "groups"
   function showSheet(html, mode) {
     $("#sheet").innerHTML = html; sheetMode = mode;
-    $("#scrim").hidden = false; document.body.style.overflow = "hidden";
+    if (!$("#scrim").hidden) { $("#sheet").scrollTop = 0; return; }
+    lockY = window.scrollY;
+    document.body.style.top = -lockY + "px";
+    document.body.classList.add("locked");
+    $("#scrim").hidden = false; $("#sheet").scrollTop = 0;
   }
-  function closeSheet() { $("#scrim").hidden = true; document.body.style.overflow = ""; R = null; sheetMode = null; }
+  let lockY = 0;
+  function closeSheet() {
+    if ($("#scrim").hidden) return;
+    $("#scrim").hidden = true; R = null; sheetMode = null;
+    document.body.classList.remove("locked"); document.body.style.top = "";
+    window.scrollTo(0, lockY);
+  }
   function findSong(id) { return allSongs().find((s) => s.id === id); }
   function chip(t) { return '<button type="button" data-tag="' + esc(t) + '" aria-pressed="' + R.tags.has(t) + '">' + esc(t) + "</button>"; }
 
