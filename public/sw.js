@@ -8,7 +8,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
-  if (e.request.method !== 'GET' || url.pathname.startsWith('/api') || url.pathname.startsWith('/ws')) return
+  if (e.request.method !== 'GET' || url.pathname.startsWith('/api') || url.pathname.startsWith('/ws') || url.pathname.includes('/drei-am-tag/')) return
   if (url.hostname === 'www.themealdb.com') {
     e.respondWith(caches.open(IMG).then(async c => (await c.match(e.request)) || fetch(e.request).then(r => { c.put(e.request, r.clone()); return r })))
     return

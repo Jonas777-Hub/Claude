@@ -1,9 +1,22 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D0A1D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Jeden Tag 3 Lieder für deine Leute. Komplett hören, bewerten, Rangliste.">
 <title>Drei am Tag</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FF4F7B'/%3E%3Cstop offset='1' stop-color='%23FFC44D'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%231F1A3B'/%3E%3Ccircle cx='32' cy='32' r='13' fill='url(%23g)'/%3E%3Ctext x='32' y='38' font-family='Arial' font-weight='900' font-size='16' text-anchor='middle' fill='%231C0610'%3E3%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
+html, body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); }
+img { max-width: 100%; }
+
 /* Layout: late-night radio. One dark stage with warm glows, a spinning record in the hero,
    cassette-like song slots, an app-style tab bar at the bottom, a bottom sheet for rating. */
 :root {
@@ -94,7 +107,7 @@ button.btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, label.check:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
 .btn.sm { padding: 8px 12px; font-size: 13px; border-radius: 11px; }
 
-input[type="text"], textarea { width: 100%; font: 500 15px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
+input[type="text"], input[type="password"], textarea { width: 100%; font: 500 15px var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; }
 input::placeholder, textarea::placeholder { color: #6E6596; }
 textarea { min-height: 84px; resize: vertical; }
 label.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
@@ -193,10 +206,23 @@ th.n { text-align: right; }
   .sheet { animation: up .25s cubic-bezier(.2,.8,.2,1); }
   @keyframes up { from { transform: translateY(40px); opacity: .5; } to { transform: none; opacity: 1; } }
 }
-</style>
 
+/* Website-only additions: auth, group switcher */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.seg button { font: 700 14px var(--f-body); color: var(--muted); background: transparent; border: 0; border-radius: 10px; padding: 10px; cursor: pointer; }
+.seg button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); }
+button.pill { cursor: pointer; font-family: var(--f-body); }
+button.pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+.linkbtn { background: none; border: 0; color: var(--muted); font: 600 13px var(--f-body); text-decoration: underline; cursor: pointer; padding: 0; }
+.code { font: 800 28px var(--f-mono); letter-spacing: .18em; }
+.group-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; color: var(--ink); font: 700 15px var(--f-body); text-align: left; width: 100%; }
+.group-item[aria-current="true"] { border-color: var(--accent); }
+.wrap.center { max-width: 460px; }
+</style>
+</head>
+<body>
 <div class="glow" aria-hidden="true"></div>
-<div class="wrap">
+<div class="wrap" id="wrap">
   <header class="top">
     <div class="vinyl" aria-hidden="true"><div class="label"><span>3</span></div></div>
     <div class="min0">
@@ -204,22 +230,82 @@ th.n { text-align: right; }
       <p class="hero-sub">Jeden Tag 3 Lieder für deine Leute. Ihre Lieder komplett hören, ehrlich bewerten, und schauen, wer den besten Geschmack hat.</p>
       <div class="hero-meta">
         <span class="pill"><span class="live"></span><span id="countdown">Neue Runde um Mitternacht</span></span>
-        <span class="pill" id="meChip" hidden></span>
+        <button class="pill" id="groupBtn" type="button" hidden><span id="groupName"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
       </div>
     </div>
   </header>
 
   <div id="status" class="notice" hidden></div>
 
-  <!-- Join -->
-  <section id="joinView" class="card stack" hidden>
-    <h2>Mitspielen</h2>
-    <p class="muted">Gib dir einen Spielnamen. Danach kannst du jeden Tag 3 Lieder schicken und die Lieder der anderen bewerten.</p>
-    <form id="joinForm" class="stack">
+  <!-- Supabase noch nicht eingerichtet -->
+  <section id="setupView" class="card stack" hidden>
+    <h2>Fast fertig</h2>
+    <p class="muted">Die App braucht noch ihre Datenbank. Trag in <code>config.js</code> die Project URL und den anon-Key aus deinem Supabase-Projekt ein. Die Anleitung steht in <code>README.md</code>.</p>
+  </section>
+
+  <!-- Anmelden / Registrieren -->
+  <section id="authView" class="card stack" hidden>
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" data-auth="login" aria-selected="true">Anmelden</button>
+      <button type="button" role="tab" data-auth="signup" aria-selected="false">Registrieren</button>
+    </div>
+    <form id="authForm" class="stack">
+      <label class="field" for="emailInput">E-Mail
+        <input id="emailInput" type="text" inputmode="email" autocomplete="email" placeholder="du@beispiel.de" required>
+      </label>
+      <label class="field" for="pwInput">Passwort
+        <input id="pwInput" type="password" autocomplete="current-password" minlength="6" placeholder="mindestens 6 Zeichen" required>
+      </label>
+      <label class="field" for="signupNick" id="signupNickField" hidden>Spielname
+        <input id="signupNick" type="text" maxlength="24" placeholder="z. B. Jonas">
+      </label>
+      <button class="btn primary" type="submit" id="authBtn">Anmelden</button>
+      <div class="spread"><span id="authMsg" class="small muted">Dein Fortschritt ist mit deinem Konto auf jedem Gerät da.</span><button type="button" class="linkbtn" id="forgotBtn">Passwort vergessen?</button></div>
+    </form>
+  </section>
+
+  <!-- Neues Passwort nach Reset-Link -->
+  <section id="resetView" class="card stack" hidden>
+    <h2>Neues Passwort</h2>
+    <form id="resetForm" class="stack">
+      <label class="field" for="newPw">Neues Passwort
+        <input id="newPw" type="password" autocomplete="new-password" minlength="6" required>
+      </label>
+      <button class="btn primary" type="submit">Speichern</button>
+      <span id="resetMsg" class="small muted"></span>
+    </form>
+  </section>
+
+  <!-- Spielname -->
+  <section id="nickView" class="card stack" hidden>
+    <h2>Wie sollen dich die anderen sehen?</h2>
+    <form id="nickForm" class="stack">
       <label class="field" for="nickInput">Spielname
         <input id="nickInput" type="text" maxlength="24" placeholder="z. B. Jonas" required>
       </label>
+      <button class="btn primary" type="submit">Weiter</button>
+    </form>
+  </section>
+
+  <!-- Gruppe gründen / beitreten -->
+  <section id="startView" class="stack-lg" hidden>
+    <form id="joinForm" class="card stack">
+      <h2>Einer Gruppe beitreten</h2>
+      <p class="muted small">Gib den 6-stelligen Code ein, den du bekommen hast.</p>
+      <label class="field" for="joinCode">Code
+        <input id="joinCode" type="text" maxlength="6" autocomplete="off" placeholder="ABC123" style="text-transform:uppercase;font-family:var(--f-mono);letter-spacing:.15em">
+      </label>
       <button class="btn primary" type="submit">Beitreten</button>
+      <span id="joinMsg" class="small"></span>
+    </form>
+    <form id="createForm" class="card stack">
+      <h2>Neue Gruppe gründen</h2>
+      <p class="muted small">Danach bekommst du einen Einladungslink für deine Freunde.</p>
+      <label class="field" for="groupNameInput">Name der Gruppe
+        <input id="groupNameInput" type="text" maxlength="40" placeholder="z. B. Musik-Crew">
+      </label>
+      <button class="btn" type="submit">Gruppe gründen</button>
+      <span id="createMsg" class="small"></span>
     </form>
   </section>
 
@@ -241,7 +327,6 @@ th.n { text-align: right; }
       </div>
       <div class="slots" id="mySlots"></div>
     </div>
-
     <form id="addForm" class="card stack">
       <h3>Lied schicken</h3>
       <label class="field" for="linkInput">Spotify-Link
@@ -263,7 +348,6 @@ th.n { text-align: right; }
         <button class="btn primary" type="submit" id="addBtn">Schicken</button>
       </div>
     </form>
-
     <div class="stack">
       <h2>Die Runde heute</h2>
       <div id="groupToday" class="stack"></div>
@@ -287,7 +371,7 @@ th.n { text-align: right; }
   <section id="v-rang" class="stack-lg" hidden>
     <div class="stack">
       <h2>Wer führt?</h2>
-      <p class="muted small">Durchschnitt aller Bewertungen, die deine Lieder von den anderen bekommen haben.</p>
+      <p class="muted small">Durchschnitt aller Bewertungen, die die Lieder einer Person von den anderen bekommen haben.</p>
       <div id="leaderboard" class="lb"></div>
     </div>
     <div class="stack">
@@ -321,385 +405,8 @@ th.n { text-align: right; }
 </div>
 <div class="toast" id="toast" hidden></div>
 
-<script>
-(function () {
-  "use strict";
-  const LIMIT = 3;
-  const CRITERIA = [["beat", "Beat"], ["text", "Text"], ["stimme", "Stimme"], ["vibe", "Vibe"], ["prod", "Produktion"]];
-  const TAGS_POS = ["Banger", "Ohrwurm", "Gänsehaut", "Auf Repeat", "Playlist-würdig", "Starker Text", "Geiler Beat", "Tolle Stimme", "Tanzbar", "Chillig", "Nostalgie", "Neu für mich", "Perfekt fürs Auto", "Hidden Gem"];
-  const TAGS_NEG = ["Zu lang", "Langweilig", "Nicht mein Genre", "Kannte ich schon", "Zu ruhig", "Zu laut", "Skip-Kandidat", "Text nervt"];
-  const QUICK = ["Direkt in meine Playlist.", "Hätte ich nie selbst gefunden.", "Der Refrain ist stark.", "Am Anfang zäh, dann gut.", "Nicht meins, aber okay.", "Mehr davon!", "Erinnert mich an früher."];
-  const COVER = ["#FF4F7B,#FFC44D", "#7B4DFF,#FF4F7B", "#13B79A,#5B8CFF", "#FF8A3D,#FF3D6E", "#5B3DF5,#2EC5E0", "#FFC44D,#FF6B3D", "#E23DB5,#7B4DFF", "#2EC27E,#E8E04A"];
-  const SPOTIFY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.6.6 0 0 1-.9.2c-2.4-1.5-5.4-1.8-9-1a.6.6 0 1 1-.3-1.2c3.9-.9 7.2-.5 9.9 1.1.3.2.4.6.3.9zm1.2-2.7a.8.8 0 0 1-1.1.3c-2.7-1.7-6.9-2.2-10.2-1.2a.8.8 0 1 1-.4-1.5c3.7-1.1 8.4-.6 11.5 1.3.4.2.5.7.2 1.1zm.1-2.8C14.7 9 9.4 8.8 6.3 9.7a.9.9 0 1 1-.5-1.8c3.5-1.1 9.4-.9 13.1 1.3a.9.9 0 0 1-1 1.7z"/></svg>';
-
-  const $ = (s) => document.querySelector(s);
-  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const dayStr = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  const today = () => dayStr(new Date());
-  const fmtDay = (s) => {
-    if (s === today()) return "Heute";
-    const y = new Date(); y.setDate(y.getDate() - 1);
-    if (s === dayStr(y)) return "Gestern";
-    const [a, b, c] = s.split("-").map(Number);
-    return new Date(a, b - 1, c).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" });
-  };
-  const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-  const f1 = (n) => n == null ? "–" : n.toFixed(1).replace(".", ",");
-  const hash = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
-
-  let db = null, user = null, me = null;
-  const S = { players: {}, songs: {}, ratings: {}, profiles: {}, loaded: false };
-  const watched = {};
-  let view = "heute";
-  try { const v = localStorage.getItem("dat-view"); if (v) view = v; } catch (e) {}
-
-  function toast(msg) {
-    const t = $("#toast"); t.textContent = msg; t.hidden = false;
-    clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
-  }
-  function setStatus(msg) { const s = $("#status"); s.textContent = msg || ""; s.hidden = !msg; }
-
-  function name(uid) {
-    const p = S.players[uid];
-    return (p && p.nick) || (S.profiles[uid] && S.profiles[uid].name) || "Mitspieler";
-  }
-  async function resolveNames() {
-    if (!user || !user.profiles) return;
-    const ids = Object.keys(S.players);
-    if (!ids.length) return;
-    try { S.profiles = await user.profiles(ids); } catch (e) {}
-  }
-
-  /* ---------- Spotify ---------- */
-  function parseSpotify(raw) {
-    const s = String(raw || "").trim();
-    const urlM = s.match(/https?:\/\/[^\s]+/);
-    const u = urlM ? urlM[0] : s;
-    const tr = u.match(/(?:open\.spotify\.com\/(?:intl-[a-z]{2}(?:-[a-zA-Z]{2})?\/)?track\/|spotify:track:)([A-Za-z0-9]{22})/);
-    if (tr) return { trackId: tr[1], url: "https://open.spotify.com/track/" + tr[1] };
-    if (/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(album|playlist|artist|episode|show)\//.test(u)) return { error: "Bitte den Link zu einem einzelnen Lied nehmen, nicht zu Album oder Playlist." };
-    if (/^https:\/\/(spotify\.link|spoti\.fi)\/[A-Za-z0-9]+/.test(u)) return { trackId: null, url: u };
-    return { error: "Das ist kein Spotify-Lied-Link. Er sieht so aus: open.spotify.com/track/…" };
-  }
-
-  /* ---------- Derived data ---------- */
-  function allSongs() {
-    const out = [];
-    for (const uid of Object.keys(S.songs)) for (const s of S.songs[uid]) out.push(s);
-    return out.sort((a, b) => b.at - a.at);
-  }
-  function allRatings() {
-    const out = [];
-    for (const uid of Object.keys(S.ratings)) for (const r of S.ratings[uid]) out.push(r);
-    return out;
-  }
-  function ratingsFor(song) { return allRatings().filter((r) => r.owner === song.by && r.songId === song.id && r.by !== song.by); }
-  function myRatingFor(song) { return (S.ratings[me] || []).find((r) => r.owner === song.by && r.songId === song.id); }
-  function songsBy(uid, day) { return (S.songs[uid] || []).filter((s) => !day || s.day === day); }
-  function todoForMe() {
-    if (!me || !S.players[me]) return [];
-    return allSongs().filter((s) => s.by !== me && !myRatingFor(s)).sort((a, b) => a.at - b.at);
-  }
-  function missedSlots(uid) {
-    const p = S.players[uid]; if (!p || !p.joinedDay) return 0;
-    const [a, b, c] = p.joinedDay.split("-").map(Number);
-    const d = new Date(a, b - 1, c); const t = today(); let miss = 0, guard = 0;
-    while (dayStr(d) < t && guard++ < 3650) { miss += Math.max(0, LIMIT - songsBy(uid, dayStr(d)).length); d.setDate(d.getDate() + 1); }
-    return miss;
-  }
-  function openFor(uid) { return allSongs().filter((s) => s.by !== uid && !(S.ratings[uid] || []).some((r) => r.owner === s.by && r.songId === s.id)).length; }
-
-  /* ---------- Rendering ---------- */
-  function cover(song) {
-    const letter = (song.title || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<div class="cover" style="background:linear-gradient(135deg,' + COVER[hash(song.by + song.id) % COVER.length] + ')" aria-hidden="true">' + esc(letter) + "</div>";
-  }
-  function scorePill(n, count) {
-    if (n == null) return '<span class="score-pill muted">–</span>';
-    return '<span class="score-pill' + (n >= 8 ? " hot" : "") + '">' + f1(n) + (count != null ? " <small>(" + count + ")</small>" : "") + "</span>";
-  }
-  function songHead(s, extra) {
-    return '<div class="song">' + cover(s) + '<div class="stack min0" style="gap:6px">' +
-      '<div class="spread" style="align-items:flex-start"><div class="min0"><div class="title">' + esc(s.title || "Unbenanntes Lied") + "</div>" +
-      '<div class="meta">' + esc(s.artist || "Unbekannt") + " · von " + esc(name(s.by)) + " · " + esc(fmtDay(s.day)) + "</div></div>" + (extra || "") + "</div>" +
-      (s.note ? '<div class="note">„' + esc(s.note) + "“</div>" : "") + "</div></div>";
-  }
-  function reviewHtml(r) {
-    const tags = (r.tags || []).map((t) => '<span class="tag">' + esc(t) + "</span>").join(" ");
-    const crit = CRITERIA.filter(([k]) => r.crit && r.crit[k]).map(([k, l]) => l + " " + r.crit[k]).join(" · ");
-    return '<div class="review"><div class="spread"><strong>' + esc(name(r.by)) + "</strong>" + scorePill(r.score) + "</div>" +
-      (crit ? '<div class="small muted num">' + esc(crit) + "</div>" : "") +
-      (tags ? '<div class="chips" style="gap:4px">' + tags + "</div>" : "") +
-      (r.comment ? '<div class="c">' + esc(r.comment) + "</div>" : "") + "</div>";
-  }
-
-  function render() {
-    const joined = !!(me && S.players[me]);
-    $("#joinView").hidden = !(S.loaded && db && me && !joined);
-    $("#tabs").hidden = !joined;
-    $("#meChip").textContent = joined ? "Du: " + name(me) : ""; $("#meChip").hidden = !joined;
-    for (const v of ["heute", "bewerten", "rang", "verlauf"]) $("#v-" + v).hidden = !joined || view !== v;
-    document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === view)));
-    if (!joined) return;
-    const todo = todoForMe();
-    const badge = $("#todoBadge"); badge.hidden = !todo.length; badge.textContent = todo.length;
-    if (view === "heute") renderToday();
-    if (view === "bewerten") renderRate(todo);
-    if (view === "rang") renderStats();
-    if (view === "verlauf") renderHistory();
-  }
-
-  function renderToday() {
-    const mine = songsBy(me, today()).sort((a, b) => a.at - b.at);
-    $("#todayCount").innerHTML = mine.length + "<small>/" + LIMIT + "</small>";
-    let html = "";
-    for (let i = 0; i < LIMIT; i++) {
-      const s = mine[i];
-      html += s ? '<div class="slot filled"><span class="n">#' + (i + 1) + '</span><span class="t">' + esc(s.title) + '</span><span class="a">' + esc(s.artist || "") + "</span></div>"
-        : '<div class="slot"><span class="n">#' + (i + 1) + '</span><span class="small muted">noch frei</span></div>';
-    }
-    $("#mySlots").innerHTML = html;
-    const full = mine.length >= LIMIT;
-    $("#addBtn").disabled = full;
-    if (full) { $("#addMsg").className = "ok"; $("#addMsg").textContent = "Fertig für heute. Morgen geht's weiter."; }
-
-    const ids = Object.keys(S.players).sort((a, b) => name(a).localeCompare(name(b)));
-    $("#groupToday").innerHTML = ids.map((uid) => {
-      const n = songsBy(uid, today()).length;
-      const open = openFor(uid);
-      let dots = ""; for (let i = 0; i < LIMIT; i++) dots += '<span class="dot' + (i < n ? " on" : "") + '"></span>';
-      return '<div class="panel spread"><div class="min0"><strong>' + esc(name(uid)) + (uid === me ? " (du)" : "") + "</strong>" +
-        '<div class="small muted">' + (open ? open + " Lied" + (open === 1 ? "" : "er") + " noch nicht bewertet" : "Alles bewertet") + "</div></div>" +
-        '<div class="row"><span class="dots" aria-label="' + n + ' von 3 geschickt">' + dots + '</span><span class="num small muted">' + n + "/" + LIMIT + "</span></div></div>";
-    }).join("") + (ids.length < 2 ? '<div class="empty"><h3>Noch allein hier</h3><p>Teile den Link dieser Seite mit deinen Freunden. Sobald sie beitreten, erscheinen sie hier.</p></div>' : "");
-  }
-
-  function renderRate(todo) {
-    $("#todoList").innerHTML = todo.length ? todo.map((s) =>
-      '<div class="card stack">' + songHead(s) +
-      '<div class="row"><a class="btn spotify" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Anhören</a>' +
-      '<button class="btn primary" data-rate="' + esc(s.by + "/" + s.id) + '">Bewerten</button></div></div>').join("")
-      : '<div class="empty"><h3>Alles bewertet</h3><p>Sobald jemand ein neues Lied schickt, taucht es hier auf.</p></div>';
-    const done = allSongs().filter((s) => s.by !== me && myRatingFor(s)).slice(0, 30);
-    $("#doneList").innerHTML = done.length ? done.map((s) => {
-      const r = myRatingFor(s);
-      return '<div class="card stack">' + songHead(s, scorePill(r.score)) +
-        '<div class="row"><a class="btn sm" href="' + esc(s.url) + '" target="_blank" rel="noopener">Spotify</a><button class="btn sm ghost" data-rate="' + esc(s.by + "/" + s.id) + '">Bewertung ändern</button></div></div>';
-    }).join("") : '<p class="muted small">Noch nichts bewertet.</p>';
-  }
-
-  function renderStats() {
-    const ids = Object.keys(S.players);
-    const rows = ids.map((uid) => {
-      const recv = allRatings().filter((r) => r.owner === uid && r.by !== uid);
-      return { uid, avg: avg(recv.map((r) => r.score)), n: recv.length, total: recv.reduce((a, r) => a + r.score, 0), songs: songsBy(uid).length };
-    }).sort((a, b) => (b.avg == null ? -1 : b.avg) - (a.avg == null ? -1 : a.avg) || b.n - a.n);
-    const lead = rows[0] && rows[0].avg != null ? rows[0].avg : null;
-    $("#leaderboard").innerHTML = rows.map((r, i) =>
-      '<div class="lb-row' + (i === 0 && lead != null ? " lead" : "") + '"><div class="lb-rank">' + (r.avg == null ? "–" : i === 0 ? '<svg viewBox="0 0 24 24" aria-label="Platz 1"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z"/></svg>' : i + 1) + "</div>" +
-      '<div class="min0"><strong>' + esc(name(r.uid)) + (r.uid === me ? " (du)" : "") + "</strong>" + (i === 0 && lead != null ? '<span class="lead-tag">führt</span>' : "") +
-      '<div class="small muted">' + r.songs + " Lieder · " + r.n + " Bewertungen · " + r.total + " Punkte</div>" +
-      '<div class="bar"><i style="width:' + (r.avg ? r.avg * 10 : 0) + '%"></i></div></div>' +
-      '<div class="lb-avg">' + f1(r.avg) + "<small>von 10</small></div></div>").join("") ||
-      '<div class="empty"><h3>Noch keine Bewertungen</h3><p>Die Rangliste füllt sich, sobald die ersten Lieder bewertet sind.</p></div>';
-
-    const scored = allSongs().map((s) => { const rs = ratingsFor(s); return { s, a: avg(rs.map((r) => r.score)), n: rs.length, rs }; })
-      .filter((x) => x.a != null).sort((a, b) => b.a - a.a || b.n - a.n).slice(0, 10);
-    $("#topSongs").innerHTML = scored.length ? scored.map((x, i) => {
-      const tags = {}; x.rs.forEach((r) => (r.tags || []).forEach((t) => tags[t] = (tags[t] || 0) + 1));
-      const top = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => '<span class="tag">' + esc(t) + "</span>").join(" ");
-      return '<div class="card stack" style="gap:8px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="num muted" style="width:26px;flex:none;font-weight:700">' + (i + 1) + '.</span><div class="min0" style="flex:1">' +
-        songHead(x.s, scorePill(x.a, x.n)) + "</div></div>" + (top ? '<div class="chips" style="gap:4px;padding-left:38px">' + top + "</div>" : "") +
-        '<div style="padding-left:38px"><a class="btn sm spotify" href="' + esc(x.s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Spotify</a></div></div>';
-    }).join("") : '<p class="muted small">Noch keine bewerteten Lieder.</p>';
-
-    let t = '<table><thead><tr><th>Person</th>' + CRITERIA.map(([, l]) => '<th class="n">' + l + "</th>").join("") + "</tr></thead><tbody>";
-    for (const uid of ids) {
-      const recv = allRatings().filter((r) => r.owner === uid && r.by !== uid);
-      t += "<tr><td>" + esc(name(uid)) + "</td>" + CRITERIA.map(([k]) => '<td class="n">' + f1(avg(recv.map((r) => r.crit && r.crit[k]).filter(Boolean))) + "</td>").join("") + "</tr>";
-    }
-    $("#critTable").innerHTML = t + "</tbody></table>";
-
-    $("#matrixBlock").hidden = ids.length < 2;
-    let m = "<table><thead><tr><th>gibt ↓ / bekommt →</th>" + ids.map((u) => '<th class="n">' + esc(name(u)) + "</th>").join("") + "</tr></thead><tbody>";
-    for (const a of ids) {
-      m += "<tr><td>" + esc(name(a)) + "</td>" + ids.map((b) => a === b ? '<td class="n muted">·</td>' : '<td class="n">' + f1(avg((S.ratings[a] || []).filter((r) => r.owner === b).map((r) => r.score))) + "</td>").join("") + "</tr>";
-    }
-    $("#matrix").innerHTML = m + "</tbody></table>";
-
-    $("#playerStats").innerHTML = ids.map((uid) => {
-      const given = S.ratings[uid] || [];
-      const tags = {}; allRatings().filter((r) => r.owner === uid).forEach((r) => (r.tags || []).forEach((x) => tags[x] = (tags[x] || 0) + 1));
-      const topTag = Object.entries(tags).sort((a, b) => b[1] - a[1])[0];
-      const miss = missedSlots(uid);
-      return '<div class="stat stack" style="gap:6px"><strong>' + esc(name(uid)) + "</strong>" +
-        '<div class="small muted">Gibt im Schnitt</div><div class="v">' + f1(avg(given.map((r) => r.score))) + "</div>" +
-        '<div class="small">Bewertet: <span class="num">' + given.length + "</span></div>" +
-        '<div class="small">Verpasste Lieder: <span class="num" style="color:' + (miss ? "var(--warn)" : "var(--good)") + '">' + miss + "</span></div>" +
-        '<div class="small">Häufigstes Etikett: ' + (topTag ? esc(topTag[0]) : "–") + "</div></div>";
-    }).join("");
-  }
-
-  function renderHistory() {
-    const songs = allSongs(); const byDay = {};
-    songs.forEach((s) => (byDay[s.day] = byDay[s.day] || []).push(s));
-    const days = Object.keys(byDay).sort().reverse();
-    $("#history").innerHTML = days.length ? days.map((d) => '<div class="stack"><div class="spread"><h2>' + esc(fmtDay(d)) + '</h2><span class="small muted">' + byDay[d].length + " Lieder</span></div>" +
-      byDay[d].map((s) => { const rs = ratingsFor(s); const canDel = s.by === me && s.day === today() && !rs.length;
-        return '<div class="card stack">' + songHead(s, scorePill(avg(rs.map((r) => r.score)), rs.length)) +
-          '<div class="row"><a class="btn sm" href="' + esc(s.url) + '" target="_blank" rel="noopener">Spotify</a>' + (canDel ? '<button class="btn sm ghost" data-del="' + esc(s.id) + '">Löschen</button>' : "") + "</div>" +
-          rs.map(reviewHtml).join("") + "</div>"; }).join("") + "</div>").join("")
-      : '<div class="empty"><h3>Noch keine Lieder</h3><p>Schick unter „Heute“ dein erstes Lied.</p></div>';
-  }
-
-  /* ---------- Rating sheet ---------- */
-  let R = null;
-  function findSong(key) { const [by, id] = key.split("/"); return (S.songs[by] || []).find((s) => s.id === id); }
-  function openSheet(key) {
-    const s = findSong(key); if (!s) return;
-    const prev = myRatingFor(s);
-    R = { song: s, score: prev ? prev.score : null, crit: Object.assign({}, prev && prev.crit), tags: new Set(prev ? prev.tags : []), listened: !!prev, comment: prev ? prev.comment || "" : "" };
-    const sh = $("#sheet");
-    sh.innerHTML =
-      '<div class="spread"><h2 id="sheetTitle">Bewerten</h2><button class="btn sm ghost" data-close>Schließen</button></div>' +
-      songHead(s) +
-      '<a class="btn spotify" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + SPOTIFY_ICON + 'Auf Spotify anhören</a>' +
-      '<label class="check" for="listened"><input type="checkbox" id="listened"' + (R.listened ? " checked" : "") + '><span>Ich habe das Lied komplett gehört</span></label>' +
-      '<div class="stack" style="gap:8px"><div class="spread"><div class="eyebrow">Gesamtnote</div><div class="big-score grad-text" id="bigScore">' + (R.score || "") + '</div></div><div class="scores" id="scoreBtns">' +
-      Array.from({ length: 10 }, (_, i) => '<button type="button" data-score="' + (i + 1) + '" aria-pressed="' + (R.score === i + 1) + '">' + (i + 1) + "</button>").join("") + "</div></div>" +
-      '<div class="stack" style="gap:8px"><div class="eyebrow">Kriterien (optional, 1–5)</div>' +
-      CRITERIA.map(([k, l]) => '<div class="crit"><span class="lbl">' + l + '</span><div class="crit-btns">' +
-        [1, 2, 3, 4, 5].map((v) => '<button type="button" data-crit="' + k + '" data-v="' + v + '" aria-pressed="' + (R.crit[k] === v) + '">' + v + "</button>").join("") + "</div></div>").join("") + "</div>" +
-      '<div class="stack" style="gap:8px"><div class="eyebrow">Gefällt mir</div><div class="chips">' + TAGS_POS.map(chip).join("") + "</div></div>" +
-      '<div class="stack" style="gap:8px"><div class="eyebrow">Eher nicht</div><div class="chips neg">' + TAGS_NEG.map(chip).join("") + "</div></div>" +
-      '<div class="stack" style="gap:8px"><div class="eyebrow">Kommentar</div><div class="chips" id="quick">' + QUICK.map((q) => '<button type="button" data-quick="' + esc(q) + '">' + esc(q) + "</button>").join("") + "</div>" +
-      '<textarea id="commentInput" maxlength="600" placeholder="Was denkst du über das Lied?">' + esc(R.comment) + "</textarea></div>" +
-      '<div class="spread"><span id="sheetMsg" class="small muted"></span><button class="btn primary" id="saveRating" type="button">Bewertung speichern</button></div>';
-    $("#scrim").hidden = false;
-    document.body.style.overflow = "hidden";
-    sheetValidate();
-  }
-  function chip(t) { return '<button type="button" data-tag="' + esc(t) + '" aria-pressed="' + R.tags.has(t) + '">' + esc(t) + "</button>"; }
-  function closeSheet() { $("#scrim").hidden = true; document.body.style.overflow = ""; R = null; }
-  function sheetValidate() {
-    if (!R) return;
-    const msg = $("#sheetMsg");
-    const listened = $("#listened").checked;
-    $("#saveRating").disabled = !(listened && R.score);
-    msg.className = "small muted";
-    msg.textContent = !listened ? "Erst komplett anhören und abhaken." : !R.score ? "Wähle eine Note von 1 bis 10." : "Note " + R.score + " von 10";
-  }
-  $("#scrim").addEventListener("click", async (e) => {
-    if (e.target === $("#scrim") || e.target.closest("[data-close]")) return closeSheet();
-    if (!R) return;
-    const sc = e.target.closest("[data-score]");
-    if (sc) { R.score = Number(sc.dataset.score); document.querySelectorAll("#scoreBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b === sc))); $("#bigScore").textContent = R.score; return sheetValidate(); }
-    const cr = e.target.closest("[data-crit]");
-    if (cr) { const k = cr.dataset.crit, v = Number(cr.dataset.v); R.crit[k] = R.crit[k] === v ? undefined : v;
-      document.querySelectorAll('[data-crit="' + k + '"]').forEach((b) => b.setAttribute("aria-pressed", String(R.crit[k] === Number(b.dataset.v)))); return; }
-    const tg = e.target.closest("[data-tag]");
-    if (tg) { const t = tg.dataset.tag; R.tags.has(t) ? R.tags.delete(t) : R.tags.add(t); tg.setAttribute("aria-pressed", String(R.tags.has(t))); return; }
-    const q = e.target.closest("[data-quick]");
-    if (q) { const ta = $("#commentInput"); ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + q.dataset.quick; return; }
-    if (e.target.closest("#saveRating")) {
-      const btn = $("#saveRating"); btn.disabled = true;
-      const s = R.song;
-      const crit = {}; for (const [k] of CRITERIA) if (R.crit[k]) crit[k] = R.crit[k];
-      const body = { owner: s.by, songId: s.id, score: R.score, crit, tags: Array.from(R.tags), comment: $("#commentInput").value.trim().slice(0, 600), listened: true, at: Date.now() };
-      try {
-        await db.doc("players/" + me + "/ratings/" + s.by + "__" + s.id).set(body);
-        closeSheet(); toast("Bewertung gespeichert");
-      } catch (err) { $("#sheetMsg").className = "err"; $("#sheetMsg").textContent = "Speichern hat nicht geklappt. Versuch es gleich noch mal."; btn.disabled = false; }
-    }
-  });
-  $("#scrim").addEventListener("change", (e) => { if (e.target.id === "listened") sheetValidate(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && R) closeSheet(); });
-
-  /* ---------- Actions ---------- */
-  $("#tabs").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-view]"); if (!b) return;
-    view = b.dataset.view; try { localStorage.setItem("dat-view", view); } catch (err) {}
-    render(); window.scrollTo(0, 0);
-  });
-  document.addEventListener("click", async (e) => {
-    const r = e.target.closest("[data-rate]"); if (r) return openSheet(r.dataset.rate);
-    const d = e.target.closest("[data-del]");
-    if (d) {
-      if (d.dataset.confirm !== "1") { d.dataset.confirm = "1"; d.textContent = "Wirklich löschen?"; return; }
-      try { await db.doc("players/" + me + "/songs/" + d.dataset.del).delete(); toast("Lied gelöscht"); } catch (err) { toast("Löschen hat nicht geklappt"); }
-    }
-  });
-  $("#linkInput").addEventListener("input", () => {
-    const v = $("#linkInput").value; const m = $("#addMsg");
-    if (!v.trim()) { m.className = "small muted"; m.textContent = "In Spotify: Teilen → Link kopieren, dann hier einfügen."; return; }
-    const p = parseSpotify(v);
-    if (p.error) { m.className = "err"; m.textContent = p.error; }
-    else { m.className = "ok"; m.textContent = "Link erkannt. Trag noch Titel und Interpret ein."; }
-    // Spotify share text like "Song · Artist" before the URL: prefill
-    const pre = v.split(/https?:\/\//)[0].trim();
-    if (pre && !$("#titleInput").value) { const parts = pre.replace(/[„“"]/g, "").split(/\s[·\-–]\s|\sby\s|\svon\s/); $("#titleInput").value = (parts[0] || "").trim().slice(0, 80); if (parts[1] && !$("#artistInput").value) $("#artistInput").value = parts[1].trim().slice(0, 80); }
-  });
-  $("#addForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const m = $("#addMsg");
-    const fail = (t) => { m.className = "err"; m.textContent = t; };
-    if (songsBy(me, today()).length >= LIMIT) return fail("Du hast heute schon 3 Lieder geschickt.");
-    const p = parseSpotify($("#linkInput").value);
-    if (p.error) return fail(p.error);
-    const title = $("#titleInput").value.trim();
-    if (!title) return fail("Bitte den Songtitel eintragen.");
-    if (p.trackId) { const dup = allSongs().find((s) => s.trackId === p.trackId); if (dup) return fail("Das Lied hat " + name(dup.by) + " schon am " + fmtDay(dup.day) + " geschickt."); }
-    const btn = $("#addBtn"); btn.disabled = true;
-    try {
-      await db.collection("players/" + me + "/songs").add({ url: p.url, trackId: p.trackId, title, artist: $("#artistInput").value.trim(), note: $("#noteInput").value.trim(), day: today(), at: Date.now() });
-      ["#linkInput", "#titleInput", "#artistInput", "#noteInput"].forEach((s) => $(s).value = "");
-      m.className = "ok"; m.textContent = "Geschickt!"; toast("Lied geschickt");
-    } catch (err) { fail("Schicken hat nicht geklappt. Versuch es gleich noch mal."); }
-    btn.disabled = songsBy(me, today()).length >= LIMIT;
-  });
-  $("#joinForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nick = $("#nickInput").value.trim().slice(0, 24); if (!nick) return;
-    try { await db.doc("players/" + me).set({ nick, joinedAt: Date.now(), joinedDay: today() }); toast("Willkommen, " + nick); }
-    catch (err) { setStatus("Beitreten hat nicht geklappt. Du brauchst mindestens Zugriff zum Mitmachen auf diesen Link. Frag die Person, die ihn geteilt hat."); }
-  });
-
-  /* ---------- Data ---------- */
-  function watchPlayer(uid) {
-    if (watched[uid]) return; watched[uid] = true;
-    db.collection("players/" + uid + "/songs").onSnapshot((snap) => {
-      S.songs[uid] = snap.docs.map((d) => Object.assign({ id: d.id, by: uid }, d.data())); render();
-    }, () => {});
-    db.collection("players/" + uid + "/ratings").onSnapshot((snap) => {
-      S.ratings[uid] = snap.docs.map((d) => Object.assign({ by: uid }, d.data())); render();
-    }, () => {});
-  }
-
-  async function boot() {
-    render();
-    if (!window.claude || !window.claude.use) { setStatus("Öffne diese Seite über ihren claude.ai-Link und melde dich an, um mitzuspielen."); return; }
-    const timer = setTimeout(() => { if (!S.loaded) setStatus("Die Daten sind gerade nicht erreichbar. Prüfe deine Verbindung."); }, 10000);
-    [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
-    if (!db) { clearTimeout(timer); setStatus("Zum Mitspielen musst du bei claude.ai angemeldet sein."); return; }
-    me = user ? await user.id() : null;
-    if (!me) setStatus("Wir können dich nicht zuordnen. Melde dich bei claude.ai an, um mitzuspielen.");
-    db.collection("players").onSnapshot(async (snap) => {
-      if (!snap.metadata.fromCache) { clearTimeout(timer); if (me) setStatus(""); }
-      S.loaded = true;
-      const next = {}; snap.docs.forEach((d) => { next[d.id] = d.data(); });
-      S.players = next; Object.keys(next).forEach(watchPlayer);
-      render(); await resolveNames(); render();
-    }, (err) => { clearTimeout(timer); S.loaded = true; setStatus("Die Daten konnten nicht geladen werden. Lade die Seite später neu."); render(); });
-  }
-  // Re-render at midnight so "Heute" rolls over.
-  let lastDay = today();
-  function tick() {
-    const n = new Date(), m = new Date(n); m.setHours(24, 0, 0, 0);
-    const mins = Math.max(0, Math.round((m - n) / 60000)), h = Math.floor(mins / 60);
-    $("#countdown").textContent = "Neue Runde in " + (h ? h + " Std " : "") + (mins % 60) + " Min";
-    if (today() !== lastDay) { lastDay = today(); render(); }
-  }
-  tick(); setInterval(tick, 30000);
-  boot();
-})();
-</script>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

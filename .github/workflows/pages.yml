@@ -33,6 +33,11 @@ jobs:
           VITE_STATIC: '1'
           VITE_REMOTE_IMAGES: '1'
       - run: cp dist/index.html dist/404.html
+      - name: Drei am Tag dazulegen (…/drei-am-tag/)
+        run: |
+          mkdir -p dist/drei-am-tag/vendor
+          cp drei-am-tag/index.html drei-am-tag/app.js drei-am-tag/config.js dist/drei-am-tag/
+          cp drei-am-tag/vendor/*.js dist/drei-am-tag/vendor/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
