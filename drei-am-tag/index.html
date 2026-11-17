@@ -218,6 +218,14 @@ button.pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; s
 .group-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); cursor: pointer; color: var(--ink); font: 700 15px var(--f-body); text-align: left; width: 100%; }
 .group-item[aria-current="true"] { border-color: var(--accent); }
 .wrap.center { max-width: 460px; }
+.pw { position: relative; display: block; }
+.pw input { padding-right: 52px; }
+.pw-toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.pw-toggle:hover { color: var(--ink); }
+.pw-toggle svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pw-toggle .eye-closed { display: none; }
+.pw-toggle[aria-pressed="true"] .eye-open { display: none; }
+.pw-toggle[aria-pressed="true"] .eye-closed { display: block; }
 </style>
 </head>
 <body>
@@ -254,7 +262,7 @@ button.pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; s
         <input id="emailInput" type="text" inputmode="email" autocomplete="email" placeholder="du@beispiel.de" required>
       </label>
       <label class="field" for="pwInput">Passwort
-        <input id="pwInput" type="password" autocomplete="current-password" minlength="6" placeholder="mindestens 6 Zeichen" required>
+        <span class="pw"><input id="pwInput" type="password" autocomplete="current-password" minlength="6" placeholder="mindestens 6 Zeichen" required><button type="button" class="pw-toggle" data-pw-toggle aria-label="Passwort anzeigen" aria-pressed="false"><svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></span>
       </label>
       <label class="field" for="signupNick" id="signupNickField" hidden>Spielname
         <input id="signupNick" type="text" maxlength="24" placeholder="z. B. Jonas">
@@ -269,7 +277,7 @@ button.pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; s
     <h2>Neues Passwort</h2>
     <form id="resetForm" class="stack">
       <label class="field" for="newPw">Neues Passwort
-        <input id="newPw" type="password" autocomplete="new-password" minlength="6" required>
+        <span class="pw"><input id="newPw" type="password" autocomplete="new-password" minlength="6" required><button type="button" class="pw-toggle" data-pw-toggle aria-label="Passwort anzeigen" aria-pressed="false"><svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></span>
       </label>
       <button class="btn primary" type="submit">Speichern</button>
       <span id="resetMsg" class="small muted"></span>
