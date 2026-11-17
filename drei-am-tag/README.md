@@ -15,7 +15,7 @@ Musik-Spiel für Freunde: Jeden Tag schickt jede Person 3 Spotify-Lieder in die 
 | `app.js` | App-Logik |
 | `config.js` | Supabase-Zugangsdaten (öffentliche Werte) |
 | `supabase.sql` | Datenbank: Tabellen, Regeln, Funktionen |
-| `vendor/` | Supabase-Bibliothek (supabase-js 2.45.4) |
+| `vendor/` | Supabase-Bibliothek (supabase-js 2.118.0) |
 | `claude-artifact.html` | ältere Version für claude.ai |
 
 ## Einrichtung (einmalig, ca. 10 Minuten)

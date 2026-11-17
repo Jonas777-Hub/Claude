@@ -1,7 +1,6 @@
-// Trage hier die Werte aus deinem Supabase-Projekt ein:
-// Supabase → Project Settings → API → "Project URL" und "anon public" Key.
-// Der anon-Key ist öffentlich und darf im Code stehen; die Daten schützen die Regeln in supabase.sql.
+// Werte aus dem Supabase-Projekt (Project Settings → API Keys).
+// Der publishable Key ist öffentlich und darf im Code stehen; die Daten schützen die Regeln in supabase.sql.
 window.DAT_CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  supabaseUrl: "https://xcvqqpazwheyzqwazufn.supabase.co",
+  supabaseAnonKey: "sb_publishable_Xt_pnIOTnVjolwYYzTR6DA_Urkmvz3c",
 };
