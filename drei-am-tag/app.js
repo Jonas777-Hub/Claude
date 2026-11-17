@@ -36,7 +36,7 @@
   let groups = [];          // [{id,name,code}]
   let group = null;         // current group
   let screen = "loading";   // loading | setup | auth | reset | nick | start | app
-  let authMode = "login";
+  let authMode = store.get("dat-known") ? "login" : "signup";
   let view = store.get("dat-view") || "heute";
   const S = { players: {}, songs: {}, ratings: {}, names: {} };
   let channel = null;
@@ -373,6 +373,14 @@
   });
 
   // Auth
+  document.querySelectorAll("[data-pw-toggle]").forEach((btn) => btn.addEventListener("click", () => {
+    const input = btn.parentElement.querySelector("input");
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.setAttribute("aria-pressed", String(show));
+    btn.setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
+    input.focus();
+  }));
   document.querySelectorAll("[data-auth]").forEach((b) => b.addEventListener("click", () => {
     authMode = b.dataset.auth; $("#authMsg").className = "small muted"; $("#authMsg").textContent = "Dein Fortschritt ist mit deinem Konto auf jedem Gerät da."; render();
   }));
@@ -476,6 +484,7 @@
     const { data: { user } } = await sb.auth.getUser();
     if (!user) { me = null; screen = "auth"; render(); return; }
     me = user.id;
+    store.set("dat-known", "1");
     const { data: prof, error } = await sb.from("profiles").select("nick").eq("id", me).maybeSingle();
     if (error) { setStatus(errText(error)); return; }
     myNick = prof ? prof.nick : "";
