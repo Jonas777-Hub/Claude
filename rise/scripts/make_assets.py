@@ -56,8 +56,6 @@ def sounds():
     notes = [523.25, 659.25, 783.99, 1046.5]
     sanft_pat = np.concatenate([tone(f, 0.45, (1, 0.2, 0.05), 0.05, 0.3) for f in notes] + [silence(1.2)])
     sanft = loop(sanft_pat)
-    ramp = np.linspace(0.25, 1.0, len(sanft))  # wird langsam lauter
-    sanft = sanft * ramp
 
     glocke = loop(np.concatenate([bell(660, 1.6), bell(880, 1.6), silence(0.4)]))
 
@@ -70,8 +68,29 @@ def sounds():
     return {"klassik": klassik, "sanft": sanft, "glocke": glocke, "sirene": sirene, "digital": digital}
 
 
+def normalize(data, peak=1.0):
+    return data / (np.max(np.abs(data)) or 1) * peak
+
+
+RAMP_SEC = 20.0      # so lange dauert es von ganz leise bis volle Lautstärke
+START_GAIN = 0.02    # ca. -34 dB: wirklich leise
+
+
+def crescendo(data):
+    """Hauptwecker: beginnt ganz leise, wird gleichmäßig (exponentiell = gefühlt linear) lauter, dann voll."""
+    t = np.arange(len(data)) / SR
+    gain = np.minimum(1.0, START_GAIN * (1 / START_GAIN) ** (t / RAMP_SEC))
+    return normalize(data, 0.95) * gain
+
+
+def loud(data):
+    """Nachwecker: sofort volle Lautstärke, zusätzlich verdichtet, damit er deutlich lauter wirkt."""
+    drive = 3.0
+    return normalize(np.tanh(normalize(data) * drive) / np.tanh(drive), 0.99)
+
+
 def write_wav(path, data):
-    data = data / (np.max(np.abs(data)) or 1) * 0.85
+    data = np.clip(data, -1, 1)
     pcm = (data * 32767).astype("<i2")
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
@@ -110,6 +129,7 @@ def icon():
 
 if __name__ == "__main__":
     for name, data in sounds().items():
-        write_wav(ROOT / "Sounds" / f"{name}.wav", data)
+        write_wav(ROOT / "Sounds" / f"{name}.wav", crescendo(data))
+        write_wav(ROOT / "Sounds" / f"{name}_laut.wav", loud(data))
     icon()
     print("fertig")

@@ -51,7 +51,7 @@ struct AlarmEditorView: View {
                     TextField("Aufstehen", text: $alarm.label)
                 }
 
-                Section("Ton") {
+                Section {
                     ForEach(AlarmSound.all) { sound in
                         HStack {
                             Button {
@@ -68,6 +68,10 @@ struct AlarmEditorView: View {
                             }
                         }
                     }
+                } header: {
+                    Text("Ton")
+                } footer: {
+                    Text("Beginnt ganz leise und wird lauter, bis du ausschaltest. Nachwecker klingeln sofort laut.")
                 }
 
                 Section {
@@ -100,7 +104,7 @@ struct AlarmEditorView: View {
                 } header: {
                     Text("Aufgaben nach dem Aufwachen")
                 } footer: {
-                    Text("Nach dem Ausschalten musst du alle Aufgaben erledigen. Sonst klingelt der Wecker nach \(store.followUpMinutes) Minuten wieder. Tipp: Nimm für jedes Foto ein Referenzfoto auf, dann kann die App genau prüfen.")
+                    Text("Nach dem Ausschalten musst du alle Aufgaben erledigen. Sonst klingelt der Wecker nach \(store.followUpMinutes) Minuten wieder, lauter. Tipp: Nimm für jedes Foto ein Referenzfoto auf, dann kann die App genau prüfen.")
                 }
             }
             .navigationTitle(isNew ? "Neuer Wecker" : "Wecker bearbeiten")
@@ -151,7 +155,8 @@ struct AlarmEditorView: View {
 
     private func preview(_ sound: AlarmSound) {
         player?.stop()
-        guard let url = Bundle.main.url(forResource: sound.id, withExtension: "wav") else { return }
+        // Die laute Version anspielen – die leise beginnende wäre in den ersten Sekunden kaum hörbar.
+        guard let url = Bundle.main.url(forResource: sound.id + "_laut", withExtension: "wav") else { return }
         try? AVAudioSession.sharedInstance().setCategory(.playback)
         player = try? AVAudioPlayer(contentsOf: url)
         player?.play()

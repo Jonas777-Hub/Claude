@@ -5,11 +5,15 @@ Rise ist ein Wecker, den du nicht einfach wegdrücken und weiterschlafen kannst:
 1. Du stellst eine Uhrzeit ein (z. B. 6:00), wählst einen Ton und legst Aufgaben fest,
    z. B. **5 Liegestütze, Foto vom Sofa, Foto vom Schreibtisch, Foto vom Sideboard**.
 2. Um 6:00 klingelt Rise wie der normale iPhone-Wecker, auch auf dem **Sperrbildschirm**,
-   im Lautlos-Modus und im Fokus.
+   im Lautlos-Modus und im Fokus. Der Ton beginnt **ganz leise** und wird in 20 Sekunden immer lauter,
+   bis er voll klingelt. So bleibt er, bis du draufdrückst.
 3. Du schaltest ihn ganz normal aus („Aus“ oder „Aufgaben“). Danach erscheint die Liste deiner Aufgaben.
-4. Erledigst du **alle Aufgaben**, ist der Wecker für heute aus (bei Wiederholung klingelt er am nächsten eingestellten Tag wieder).
-5. Erledigst du sie **nicht innerhalb einer Stunde**, klingelt er wieder, und zwar so lange, bis alles erledigt ist.
-   Die Wartezeit (Standard 60 Min.) stellst du in den Einstellungen ein.
+   Ein großer Countdown zeigt, wie viel Zeit du noch hast.
+4. Erledigst du **alle Aufgaben innerhalb von 5 Minuten**, ist der Wecker für heute aus
+   (bei Wiederholung klingelt er am nächsten eingestellten Tag wieder).
+5. Schaffst du es nicht, klingelt er wieder, diesmal **sofort in voller Lautstärke** und stärker verdichtet.
+   Nach dem Ausschalten hast du wieder 5 Minuten. Das wiederholt sich, bis alles erledigt ist.
+   Die Zeit (1–30 Min., Standard 5) stellst du in den Einstellungen ein.
 
 ## Aufgaben und wie sie geprüft werden
 
@@ -50,7 +54,7 @@ Schritte:
 
 - Wecker in der Liste **nach rechts wischen › Testen**: Er klingelt in einer Minute. Sperr das iPhone dabei,
   dann siehst du genau, was dich morgens erwartet.
-- Zum Testen der Wiederhol-Logik in den Einstellungen „Erneut klingeln nach“ auf 5 Min. stellen.
+- Zum schnellen Testen der Wiederhol-Logik in den Einstellungen „Zeit für Aufgaben“ auf 1 Min. stellen.
 
 ## Aufbau
 
@@ -73,7 +77,7 @@ rise/
 │   ├── SettingsView.swift       Einstellungen, API-Schlüssel
 │   ├── Keychain.swift           Schlüsselbund
 │   ├── CameraPicker.swift       Kamera
-│   ├── Sounds/*.wav             Wecktöne
+│   ├── Sounds/*.wav             Wecktöne: <name>.wav (leise → laut) und <name>_laut.wav (Nachwecker)
 │   └── Assets.xcassets          App-Icon
 └── scripts/make_assets.py Erzeugt Töne und Icon neu
 ```
@@ -82,7 +86,11 @@ rise/
 
 - AlarmKit-Wecker klingeln auch, wenn die App geschlossen ist. Ist das iPhone **komplett ausgeschaltet**,
   klingelt kein Wecker, auch nicht der von Apple.
-- Ein eigener Ton muss als `.wav`, `.caf` oder `.aiff` (max. 30 s) in `Rise/Sounds/` liegen und in
+- **Lautstärke:** Eine App kann die iPhone-Lautstärke nicht selbst hochdrehen. Deshalb steckt das
+  „leise → laut“ direkt in den Tondateien. Wie laut „voll“ ist, bestimmt die Wecker-Lautstärke unter
+  Einstellungen › Töne & Haptik. Stell sie hoch. iOS spielt einen Weckton höchstens 30 Sekunden am Stück.
+  Wiederholt das iPhone den Ton danach, beginnt er wieder leise.
+- Ein eigener Ton muss als `.wav`, `.caf` oder `.aiff` (max. 30 s) zweimal in `Rise/Sounds/` liegen (`name.wav` und `name_laut.wav`) und in
   `AlarmSound.all` (`Models.swift`) eingetragen werden.
 - Rise wurde ohne Mac geschrieben und noch nicht in Xcode kompiliert. Sollte Xcode beim ersten Build
   einen Fehler melden, schick ihn mir und ich behebe ihn.

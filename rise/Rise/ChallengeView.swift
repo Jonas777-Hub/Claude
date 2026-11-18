@@ -52,10 +52,16 @@ struct ChallengeView: View {
                         Text("Der Nachwecker ist gleich aus.")
                     } else {
                         Text("\(done) von \(alarm.tasks.count) erledigt").font(.title2.bold())
-                        TimelineView(.periodic(from: .now, by: 30)) { context in
-                            let minutes = max(0, Int(pending.nextRingAt.timeIntervalSince(context.date) / 60))
-                            Text("Erledige alles, sonst klingelt der Wecker in \(minutes) Min. wieder (\(pending.nextRingAt.formatted(date: .omitted, time: .shortened)) Uhr).")
-                                .foregroundStyle(.secondary)
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            let left = max(0, Int(pending.nextRingAt.timeIntervalSince(context.date)))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(String(format: "%d:%02d", left / 60, left % 60))
+                                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                                    .monospacedDigit()
+                                    .foregroundStyle(left < 60 ? .red : .orange)
+                                Text(left > 0 ? "Danach klingelt der Wecker wieder, lauter." : "Der Wecker klingelt gleich wieder!")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                     ProgressView(value: Double(done), total: Double(max(alarm.tasks.count, 1)))

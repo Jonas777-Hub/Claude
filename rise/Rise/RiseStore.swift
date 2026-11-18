@@ -10,8 +10,8 @@ final class RiseStore {
 
     var alarms: [RiseAlarm] = [] { didSet { save() } }
     var pending: PendingChallenge? { didSet { save() } }
-    /// Nach wie vielen Minuten der Wecker erneut klingelt, wenn die Aufgaben nicht erledigt sind.
-    var followUpMinutes: Int = 60 { didSet { save() } }
+    /// So viele Minuten hast du nach dem Ausschalten für die Aufgaben. Danach klingelt er wieder, lauter.
+    var followUpMinutes: Int = 5 { didSet { save() } }
     var lastCompletedAt: Date? { didSet { save() } }
 
     private var isLoading = false

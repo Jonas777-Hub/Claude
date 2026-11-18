@@ -34,15 +34,18 @@ struct RiseTask: Codable, Hashable, Identifiable {
     static func photo(_ name: String) -> RiseTask { RiseTask(kind: .photo, name: name) }
 }
 
-/// Weckton aus dem App-Bundle (Rise/Sounds).
+/// Weckton aus dem App-Bundle (Rise/Sounds). Jeder Ton liegt zweimal vor:
+/// `<id>.wav` beginnt ganz leise und wird in 20 s lauter (Hauptwecker),
+/// `<id>_laut.wav` ist sofort auf voller Lautstärke (Nachwecker).
 struct AlarmSound: Identifiable, Hashable {
     let id: String
     let name: String
     var fileName: String { id + ".wav" }
+    var loudFileName: String { id + "_laut.wav" }
 
     static let all: [AlarmSound] = [
         AlarmSound(id: "klassik", name: "Klassik"),
-        AlarmSound(id: "sanft", name: "Sanft (wird lauter)"),
+        AlarmSound(id: "sanft", name: "Sanft"),
         AlarmSound(id: "glocke", name: "Glocke"),
         AlarmSound(id: "digital", name: "Digital"),
         AlarmSound(id: "sirene", name: "Sirene"),

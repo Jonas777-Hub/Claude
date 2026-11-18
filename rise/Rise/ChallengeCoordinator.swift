@@ -3,9 +3,9 @@ import UserNotifications
 
 /// Die Weck-Logik:
 /// 1. Wecker klingelt → du schaltest ihn ganz normal aus.
-/// 2. Die Aufgaben werden fällig und ein Nachwecker wird in `followUpMinutes` (Standard 60) geplant.
+/// 2. Die Aufgaben werden fällig und ein Nachwecker wird in `followUpMinutes` (Standard 5) geplant.
 /// 3. Sind alle Aufgaben erledigt, wird der Nachwecker gelöscht – Ruhe bis zum nächsten Weckertag.
-/// 4. Sonst klingelt der Nachwecker, und alles beginnt wieder bei 1.
+/// 4. Sonst klingelt der Nachwecker – sofort laut –, und nach dem Ausschalten laufen wieder 5 Minuten.
 @MainActor
 enum ChallengeCoordinator {
     private static let notificationID = "rise.tasks"
@@ -99,9 +99,9 @@ enum ChallengeCoordinator {
     /// Die Nachricht mit den Aufgaben, die nach dem Ausschalten auf dem Sperrbildschirm erscheint.
     private static func postTaskNotification(for alarm: RiseAlarm) async {
         let content = UNMutableNotificationContent()
-        content.title = "Jetzt aufstehen und erledigen:"
+        content.title = "Jetzt sofort erledigen:"
         content.body = alarm.tasks.map { "• " + $0.title }.joined(separator: "\n")
-            + "\n\nSonst klingelt der Wecker in \(RiseStore.shared.followUpMinutes) Min. wieder."
+            + "\n\nDu hast \(RiseStore.shared.followUpMinutes) Min. Sonst klingelt der Wecker wieder – lauter."
         content.interruptionLevel = .timeSensitive
         content.sound = nil
         let request = UNNotificationRequest(identifier: notificationID, content: content,

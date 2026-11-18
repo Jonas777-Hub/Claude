@@ -13,13 +13,13 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Stepper(value: $store.followUpMinutes, in: 5...180, step: 5) {
-                        Text("Erneut klingeln nach \(store.followUpMinutes) Min.")
+                    Stepper(value: $store.followUpMinutes, in: 1...30) {
+                        Text("Zeit für Aufgaben: \(store.followUpMinutes) Min.")
                     }
                 } header: {
                     Text("Wenn Aufgaben offen bleiben")
                 } footer: {
-                    Text("Nach dem Ausschalten hast du so viel Zeit für deine Aufgaben. Danach klingelt der Wecker wieder, so lange, bis alles erledigt ist.")
+                    Text("So viel Zeit hast du nach dem Ausschalten für alle Aufgaben. Schaffst du es nicht, klingelt der Wecker wieder, sofort in voller Lautstärke. Das wiederholt sich, bis alles erledigt ist.\n\nDer erste Weckton beginnt ganz leise und wird in 20 Sekunden immer lauter. Wie laut „voll“ ist, bestimmt die Lautstärke unter iOS-Einstellungen › Töne & Haptik.")
                 }
 
                 Section {

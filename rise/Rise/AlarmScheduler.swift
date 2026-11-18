@@ -45,7 +45,7 @@ enum AlarmScheduler {
             : .weekly(Weekday.ordered.filter { alarm.weekdays.contains($0.rawValue) }.map(\.locale))
         let schedule = Alarm.Schedule.relative(.init(time: time, repeats: recurrence))
 
-        try await scheduleAlert(id: alarm.id, alarm: alarm, title: alarm.label, isFollowUp: false, schedule: schedule)
+        try await scheduleAlert(id: alarm.id, alarm: alarm, title: alarm.label, loud: false, schedule: schedule)
     }
 
     static func syncAll(_ alarms: [RiseAlarm]) async {
@@ -56,17 +56,18 @@ enum AlarmScheduler {
         try? manager.cancel(id: alarm.id)
     }
 
-    /// Nachwecker: klingelt einmalig zum angegebenen Zeitpunkt, wenn die Aufgaben noch offen sind.
+    /// Nachwecker: klingelt einmalig zum angegebenen Zeitpunkt, wenn die Aufgaben noch offen sind –
+    /// sofort in voller Lautstärke (laute Version des Tons).
     static func scheduleFollowUp(for alarm: RiseAlarm, at date: Date) async throws -> UUID {
         let id = UUID()
-        try await scheduleAlert(id: id, alarm: alarm, title: "Aufgaben noch offen!", isFollowUp: true, schedule: .fixed(date))
+        try await scheduleAlert(id: id, alarm: alarm, title: "Aufgaben nicht erledigt!", loud: true, schedule: .fixed(date))
         return id
     }
 
     /// Testwecker in einer Minute (verhält sich wie der echte Wecker).
     static func scheduleTest(for alarm: RiseAlarm) async throws {
         guard await requestAuthorization() else { throw SchedulerError.notAuthorized }
-        try await scheduleAlert(id: UUID(), alarm: alarm, title: alarm.label, isFollowUp: false,
+        try await scheduleAlert(id: UUID(), alarm: alarm, title: alarm.label, loud: false,
                                 schedule: .fixed(Date().addingTimeInterval(60)))
     }
 
@@ -84,8 +85,9 @@ enum AlarmScheduler {
         return alarms.contains { $0.id == id }
     }
 
-    private static func scheduleAlert(id: UUID, alarm: RiseAlarm, title: String, isFollowUp: Bool,
+    private static func scheduleAlert(id: UUID, alarm: RiseAlarm, title: String, loud: Bool,
                                       schedule: Alarm.Schedule) async throws {
+        let sound = AlarmSound.named(alarm.sound)
         let stopButton = AlarmButton(text: "Aus", textColor: .white, systemImageName: "stop.circle")
         let taskButton = AlarmButton(text: "Aufgaben", textColor: .white, systemImageName: "checklist")
         let alert = AlarmPresentation.Alert(title: "\(title)",
@@ -94,8 +96,8 @@ enum AlarmScheduler {
                                             secondaryButtonBehavior: .custom)
         let attributes = AlarmAttributes<RiseMetadata>(
             presentation: AlarmPresentation(alert: alert),
-            metadata: RiseMetadata(configID: alarm.id, isFollowUp: isFollowUp),
-            tintColor: .orange)
+            metadata: RiseMetadata(configID: alarm.id, isFollowUp: loud),
+            tintColor: loud ? .red : .orange)
 
         let configuration = AlarmManager.AlarmConfiguration<RiseMetadata>(
             countdownDuration: nil,
@@ -103,7 +105,7 @@ enum AlarmScheduler {
             attributes: attributes,
             stopIntent: RiseStopIntent(alarmID: id.uuidString, configID: alarm.id.uuidString),
             secondaryIntent: RiseOpenTasksIntent(alarmID: id.uuidString, configID: alarm.id.uuidString),
-            sound: .named(AlarmSound.named(alarm.sound).fileName))
+            sound: .named(loud ? sound.loudFileName : sound.fileName))
 
         _ = try await manager.schedule(id: id, configuration: configuration)
     }
