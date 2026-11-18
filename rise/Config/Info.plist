@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Rise weckt dich zur eingestellten Uhrzeit – auch wenn dein iPhone gesperrt ist.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Rise braucht die Kamera für deine Aufgaben: Fotos von Objekten machen und Liegestütze zählen.</string>
+</dict>
+</plist>
