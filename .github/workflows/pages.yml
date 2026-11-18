@@ -38,6 +38,10 @@ jobs:
           mkdir -p dist/drei-am-tag/vendor
           cp drei-am-tag/index.html drei-am-tag/app.js drei-am-tag/config.js dist/drei-am-tag/
           cp drei-am-tag/vendor/*.js dist/drei-am-tag/vendor/
+      - name: Rise Web-Wecker dazulegen (…/rise/)
+        run: |
+          mkdir -p dist/rise
+          cp rise/web/index.html dist/rise/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
