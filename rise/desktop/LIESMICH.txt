@@ -1,0 +1,31 @@
+RISE – Wecker für den Computer (offline)
+========================================
+
+Starten
+-------
+Windows:  Doppelklick auf "Rise starten (Windows).bat"
+Mac:      Doppelklick auf "Rise starten (Mac).command"
+          (beim ersten Mal: Rechtsklick > Öffnen > Öffnen, weil die Datei nicht aus dem App Store kommt)
+Linux / sonst:  Rise.html im Browser öffnen (am besten Chrome, Edge oder Firefox)
+
+Rise öffnet sich als eigenes Fenster und läuft komplett ohne Internet.
+Alle 4 Dateien müssen im selben Ordner bleiben.
+
+Abends
+------
+1. Rise öffnen, Computer ans Stromkabel, Lautstärke hoch, keine Kopfhörer eingesteckt.
+2. Auf "Nachtmodus starten" klicken. Erst dann darf Rise Ton abspielen.
+3. Fenster offen lassen. Der Computer darf nicht in den Ruhezustand gehen:
+   - Mac: Das Startfenster (Terminal) verhindert das automatisch, solange es offen ist.
+   - Windows: Einstellungen > System > Netzbetrieb > Bildschirm und Ruhezustand > "Nie".
+
+Morgens
+-------
+- Der Wecker beginnt ganz leise und wird in 20 Sekunden immer lauter.
+- Nach "Aus" bekommst du EINE zufällige Aufgabe und hast 5 Minuten Zeit.
+  Sonst klingelt er sofort laut wieder (immer wieder, bis die Aufgabe erledigt ist).
+- Liegestütze/Sit-ups: bei jeder Wiederholung die Leertaste drücken.
+- Fotos: werden mit der Webcam gemacht und mit deinem Referenzfoto verglichen.
+  Nimm im Editor für jede Foto-Aufgabe ein Referenzfoto auf (Kamera-Knopf neben dem Namen).
+
+Deine Wecker werden im Browser gespeichert. Browserdaten löschen löscht auch die Wecker.

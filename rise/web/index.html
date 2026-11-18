@@ -204,6 +204,10 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
 .win .burst { width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, #fff6d8, var(--gold) 40%, var(--ember) 70%, transparent 72%); box-shadow: 0 0 100px 30px rgba(255,170,80,.4); animation: rise 1.2s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes rise { from { transform: translateY(120px) scale(.6); opacity: 0; } }
 
+.cam { z-index: 30; background: rgba(5, 6, 12, .96); }
+.cam video { width: min(640px, 100%); aspect-ratio: 4 / 3; max-height: 60vh; object-fit: cover; border-radius: var(--r-lg); background: #000; border: 1px solid var(--rim); transform: scaleX(-1); }
+.kbd { display: inline-block; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--rim); background: var(--glass); font: 700 12px var(--body); color: var(--text); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .ring .sunball { transform: translateY(0); }
@@ -369,10 +373,23 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
   <button class="sun" id="btnFinish" style="min-width:220px;min-height:56px">Fertig</button>
 </div>
 
+<!-- Webcam (Desktop) -->
+<div class="screen cam" id="scrCam" hidden>
+  <h2 id="camTitle">Foto aufnehmen</h2>
+  <video id="camVideo" autoplay playsinline muted></video>
+  <p class="small dim" id="camHint">Halte das Objekt gut sichtbar in die Kamera.</p>
+  <div class="row">
+    <button class="plain" id="camCancel">Abbrechen</button>
+    <button class="sun" id="camShoot" style="min-width:200px"><svg class="i"><use href="#i-cam"/></svg>Foto aufnehmen</button>
+  </div>
+</div>
+
 <input type="file" id="camera" accept="image/*" capture="environment" hidden>
 
 <script>
 (() => {
+  const DESKTOP = window.RISE_DESKTOP === true;   // Offline-Desktop-Version (rise/desktop/Rise.html)
+
   // ---------- Speicher ----------
   const KEY = "rise.v1";
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } };
@@ -491,7 +508,9 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
 
   // ---------- Bildschirm anlassen ----------
   let wakeLock = null, armed = false;
-  const hintLock = "Der Bildschirm ließ sich nicht wachhalten. Stell Automatische Sperre auf „Nie“ (Einstellungen › Anzeige & Helligkeit).";
+  const hintLock = DESKTOP
+    ? "Der Bildschirm ließ sich nicht wachhalten. Schalte den Ruhezustand in den Energieeinstellungen deines Computers aus."
+    : "Der Bildschirm ließ sich nicht wachhalten. Stell Automatische Sperre auf „Nie“ (Einstellungen › Anzeige & Helligkeit).";
   async function keepAwake() {
     try { wakeLock = await navigator.wakeLock?.request("screen"); $("nightLock").textContent = wakeLock ? "" : hintLock; }
     catch { $("nightLock").textContent = hintLock; }
@@ -653,7 +672,7 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
   $("btnFinish").onclick = () => { state.pending = null; testAlarm = null; persist(); backToRest(); };
   function backToRest() { if (armed) { screen("scrNight"); updateNight(); } else { screen(null); show("home"); renderList(); } }
 
-  function startTask(t) { $("verdict").replaceChildren(); if (isReps(t)) openPush(t); else takePhoto((img) => checkPhoto(t, img)); }
+  function startTask(t) { $("verdict").replaceChildren(); if (isReps(t)) openPush(t); else takePhoto((img) => checkPhoto(t, img), taskTitle(t)); }
 
   // Liegestütze: Nasen-Tipp-Zähler
   let pushTask = null, pushCount = 0, lastTap = 0;
@@ -663,14 +682,21 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
   }
   function openPush(t) {
     pushTask = t; pushCount = 0; lastTap = 0; $("pushTitle").textContent = taskTitle(t); $("pushHint").textContent = "";
-    $("pushHow").textContent = t.kind === "sit"
-      ? "Leg das iPhone zwischen deine Füße. Bei jedem Sit-up kommst du ganz hoch und tippst mit der Hand auf den Kreis."
-      : "Leg das iPhone unter dein Gesicht auf den Boden. Bei jedem Liegestütz tippst du unten mit der Nase auf den Kreis.";
+    $("pushHow").textContent = DESKTOP
+      ? (t.kind === "sit"
+        ? "Stell die Tastatur oder den Laptop vor deine Füße. Bei jedem Sit-up kommst du ganz hoch und drückst die Leertaste."
+        : "Stell die Tastatur oder den Laptop vor dich auf den Boden. Bei jedem Liegestütz drückst du unten die Leertaste, z. B. mit der Nase.")
+      : (t.kind === "sit"
+        ? "Leg das iPhone zwischen deine Füße. Bei jedem Sit-up kommst du ganz hoch und tippst mit der Hand auf den Kreis."
+        : "Leg das iPhone unter dein Gesicht auf den Boden. Bei jedem Liegestütz tippst du unten mit der Nase auf den Kreis.");
     $("pad").setAttribute("aria-label", t.kind === "sit" ? "Sit-up zählen" : "Liegestütz zählen");
     setPad(); screen("scrPush");
   }
-  $("pad").addEventListener("pointerdown", (e) => {
-    e.preventDefault();
+  $("pad").addEventListener("pointerdown", (e) => { e.preventDefault(); countRep(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && !$("scrPush").hidden) { e.preventDefault(); if (!e.repeat) countRep(); }
+  });
+  function countRep() {
     if (!pushTask || pushCount >= pushTask.count) return;
     const now = Date.now();
     if (now - lastTap < 900) { $("pushHint").textContent = "Zu schnell. Ein Tipp pro Wiederholung."; return; }
@@ -678,12 +704,44 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
     const p = $("pad"); p.classList.remove("hit"); void p.offsetWidth; p.classList.add("hit");
     setPad();
     if (pushCount >= pushTask.count) setTimeout(() => { screen("scrTasks"); markDone(pushTask); if (!allDone()) say("Geschafft", "ok"); }, 350);
-  });
+  }
   $("pushCancel").onclick = () => screen("scrTasks");
 
   // Fotos
   let photoCb = null, checking = false;
-  function takePhoto(cb) { photoCb = cb; $("camera").value = ""; $("camera").click(); }
+  function takePhoto(cb, title = "Foto aufnehmen") {
+    if (DESKTOP && navigator.mediaDevices?.getUserMedia) return openWebcam(cb, title);
+    photoCb = cb; $("camera").value = ""; $("camera").click();
+  }
+  // Desktop: Foto direkt mit der Webcam (keine alten Dateien)
+  let camStream = null, camCb = null;
+  async function openWebcam(cb, title) {
+    camCb = cb; $("camTitle").textContent = title;
+    $("camHint").textContent = "Kamera wird gestartet …";
+    $("scrCam").hidden = false;
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+      $("camVideo").srcObject = camStream;
+      $("camHint").textContent = "Richte die Kamera auf das Objekt und tippe auf Foto aufnehmen.";
+    } catch {
+      closeWebcam();
+      say("Keine Webcam erlaubt. Wähle stattdessen ein Foto aus.", "bad");
+      photoCb = cb; $("camera").value = ""; $("camera").click();
+    }
+  }
+  function closeWebcam() {
+    camStream?.getTracks().forEach((t) => t.stop()); camStream = null;
+    $("camVideo").srcObject = null; $("scrCam").hidden = true;
+  }
+  $("camCancel").onclick = () => { camCb = null; closeWebcam(); };
+  $("camShoot").onclick = () => {
+    const v = $("camVideo"); if (!v.videoWidth) return;
+    const s = Math.min(1, 768 / Math.max(v.videoWidth, v.videoHeight));
+    const cv = document.createElement("canvas"); cv.width = Math.round(v.videoWidth * s); cv.height = Math.round(v.videoHeight * s);
+    cv.getContext("2d").drawImage(v, 0, 0, cv.width, cv.height);
+    const url = cv.toDataURL("image/jpeg", 0.75), cb = camCb; camCb = null;
+    closeWebcam(); cb?.(url);
+  };
   $("camera").onchange = async () => {
     const f = $("camera").files?.[0]; if (!f || !photoCb) return;
     const cb = photoCb; photoCb = null;
@@ -811,7 +869,7 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
         mid.append(inp);
         const refBtn = el("button", "ref"); refBtn.setAttribute("aria-label", "Referenzfoto aufnehmen");
         if (t.ref) { const im = el("img"); im.src = t.ref; im.alt = ""; refBtn.append(im); } else refBtn.append(icon("cam"));
-        refBtn.onclick = () => takePhoto(async (url) => { t.ref = await shrinkData(url, 480); renderEditor(); });
+        refBtn.onclick = () => takePhoto(async (url) => { t.ref = await shrinkData(url, 480); renderEditor(); }, `Referenzfoto: ${t.name || "Objekt"}`);
         right.append(refBtn);
       }
       const del = el("button", "plain icon danger"); del.append(icon("x")); del.setAttribute("aria-label", "Aufgabe entfernen");
@@ -892,6 +950,13 @@ input[type=time]::-webkit-calendar-picker-indicator { display: none; }
     if (!$("scrNight").hidden) updateNight();
     if (!$("home").hidden && new Date().getSeconds() === 0) renderHero();
   }, 1000);
+
+  if (DESKTOP) {
+    document.querySelector(".note p").innerHTML = "Lass Rise über Nacht geöffnet und den Computer am Strom. <b>Nachtmodus starten</b> hält den Bildschirm an und erlaubt den Ton. Läuft komplett ohne Internet. <b>Test</b> klingelt in 10 Sekunden.";
+    $("aiState").textContent = "Offline-Version: Fotos werden auf diesem Computer mit deinem Referenzfoto verglichen. Nimm für jede Foto-Aufgabe im Editor ein Referenzfoto mit der Webcam auf.";
+    $("btnAllowAi").hidden = true;
+    document.querySelector("#settings section:last-of-type p").textContent = "Rise kann die Lautstärke des Computers nicht selbst erhöhen. Dreh sie vor dem Schlafen hoch und lass keine Kopfhörer eingesteckt.";
+  }
 
   renderList();
   if (state.pending && alarmById(state.pending.alarmId)) { lastRung = state.pending.alarmId; openTasks(); }
